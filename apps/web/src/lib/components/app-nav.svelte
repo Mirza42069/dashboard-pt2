@@ -1,58 +1,19 @@
-<script lang="ts" module>
-	import { LayoutDashboard, ListChecks, type IconComponent } from "@DashboardPT2/ui/components/icons";
-
-	import type { Dictionary } from "../../i18n";
-
-	type NavItem = {
-		href: string;
-		labelKey: keyof Dictionary["nav"];
-		icon: IconComponent;
-	};
-
-	type NavSection = {
-		headingKey?: keyof Dictionary["nav"];
-		items: NavItem[];
-	};
-
-	/**
-	 * Settings deliberately lives in the account menu, not here: it configures
-	 * the person, not the business.
-	 */
-	const SECTIONS: NavSection[] = [
-		{
-			items: [
-				{ href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-				{ href: "/reconciliations", labelKey: "reconciliations", icon: ListChecks }
-			]
-		}
-	];
-
-	/**
-	 * Circ-out over a full second. Almost all the distance goes in the first
-	 * ~350ms and the rest is a long settle, so the rail reads as gliding to a
-	 * stop rather than easing off. Written as a literal class string, not
-	 * composed at runtime, so Tailwind's scanner still sees `duration-[1000ms]`
-	 * and the `ease-[...]` value in the source. No spaces inside cubic-bezier()
-	 * — Tailwind will not parse an arbitrary value that contains them.
-	 *
-	 * This times the rail and the things that must move *with* it. It
-	 * deliberately does not touch hover colour; see the row below.
-	 *
-	 * No motion-reduce guard here, deliberately — see the reduced-motion block in
-	 * packages/ui/src/styles/globals.css. On Windows that query follows Settings
-	 * > Accessibility > Visual effects > Animation effects, which is off on
-	 * machines with no motion sensitivity involved, and it would take the whole
-	 * collapse with it.
-	 */
-	const MOTION = "duration-[1000ms] ease-[cubic-bezier(0.075,0.82,0.165,1)]";
-</script>
-
 <script lang="ts">
-	import * as Tooltip from "@DashboardPT2/ui/components/tooltip";
-	import { cn } from "@DashboardPT2/ui/lib/utils";
-	import { page } from "$app/state";
+	import { Button } from '@DashboardPT2/ui/components/button';
+	import {
+		FileCode2,
+		FileSpreadsheet,
+		Plus,
+		Search,
+		Upload
+	} from '@DashboardPT2/ui/components/icons';
+	import * as Tooltip from '@DashboardPT2/ui/components/tooltip';
+	import { cn } from '@DashboardPT2/ui/lib/utils';
+	import { createQuery } from '@tanstack/svelte-query';
+	import { page } from '$app/state';
 
-	import { getT } from "../../i18n/context.svelte";
+	import { getT } from '../../i18n/context.svelte';
+	import { client } from '../orpc';
 
 	let {
 		collapsed = false,
@@ -60,138 +21,150 @@
 	}: { collapsed?: boolean; onNavigate?: () => void } = $props();
 
 	const t = getT();
+	let filter = $state('');
 
-	const sections = SECTIONS;
+	const workbooks = createQuery(() => ({
+		queryKey: ['reconciliation', 'sidebar'],
+		queryFn: () => client.reconciliation.list({ limit: 12 })
+	}));
+
+	const visibleWorkbooks = $derived(
+		(workbooks.data?.items ?? []).filter((item) => {
+			const term = filter.trim().toLocaleLowerCase();
+			return !term || item.name.toLocaleLowerCase().includes(term);
+		})
+	);
 
 	function isActive(href: string) {
 		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 	}
+
+	/**
+	 * Three dots, not seven.
+	 *
+	 * The nav is 60px of rail and cannot carry the full workflow vocabulary, so
+	 * it collapses to the only question it can answer at this size: is this
+	 * workbook finished, is somebody waiting on it, or is it still being worked?
+	 * The written status lives on the workbooks index and in the grid header,
+	 * where a StatusBadge has room for its icon and label.
+	 */
+	function statusTone(status: string) {
+		if (status === 'COMPLETED' || status === 'APPROVED') return 'bg-success';
+		if (status === 'SUBMITTED' || status === 'READY_FOR_REVIEW') return 'bg-warning';
+		return 'bg-brand';
+	}
+
+	const sections = $derived([
+		{ href: '/workbooks', label: t.nav.workbooks, Icon: FileSpreadsheet },
+		{ href: '/imports', label: t.nav.imports, Icon: Upload },
+		{ href: '/tax-reports', label: t.nav.taxReports, Icon: FileCode2 }
+	]);
 </script>
 
-<nav class={cn("flex flex-col transition-[gap]", MOTION, collapsed ? "gap-1" : "gap-5")}>
-	{#each sections as section, sectionIndex (section.headingKey ?? "main")}
-		<div class="space-y-1">
-			<!--
-				Collapsed: a hairline separates groups, since headings won't fit.
-				Keyed off sectionIndex rather than a first:hidden rule, which would
-				never render a separator at all — the hairline is the first child of
-				every section wrapper, so :first-child always matches.
-			-->
-			{#if collapsed && sectionIndex > 0}
-				<div class="mx-2 my-1 border-t"></div>
-			{/if}
-
-			<!--
-				The one thing in the rail that fades rather than clips. Headings are
-				the exception because a partial word ("OPERA") would sit there for
-				most of a one-second slide, which nothing else here risks.
-
-				Two durations against the two properties, in order: the height closes
-				with the rail so the rows below it travel in sync, while the text
-				itself is gone in 100ms. Collapsing both onto one duration is what
-				makes this look wrong — a fast height snaps every row upward while
-				the rail is still a tenth of the way through.
-
-				It collapses to zero height rather than unmounting, so it slides away
-				with the rail instead of vanishing on the first frame.
-			-->
-			{#if section.headingKey}
-				<p
-					aria-hidden={collapsed}
+<div class="flex h-full min-h-0 flex-col">
+	<Tooltip.Root disabled={!collapsed}>
+		<Tooltip.Trigger>
+			{#snippet child({ props })}
+				<Button
+					{...props}
+					href="/workbooks?new=1"
+					onclick={onNavigate}
+					aria-label={collapsed ? t.workbooks.create : undefined}
 					class={cn(
-						"overflow-hidden px-2 text-[0.6875rem] font-medium tracking-widest whitespace-nowrap text-muted-foreground uppercase",
-						"transition-[height,opacity] duration-[1000ms,100ms] ease-[cubic-bezier(0.075,0.82,0.165,1)]",
-						collapsed ? "h-0 opacity-0" : "h-4 opacity-100"
+						'h-8 w-full overflow-hidden shadow-none',
+						collapsed ? 'justify-center px-0' : 'justify-start gap-2 px-2.5'
 					)}
 				>
-					{t.nav[section.headingKey]}
-				</p>
-			{/if}
+					<Plus class="size-3.5 shrink-0" />
+					{#if !collapsed}<span class="truncate">{t.workbooks.create}</span>{/if}
+				</Button>
+			{/snippet}
+		</Tooltip.Trigger>
+		<Tooltip.Content side="right">{t.workbooks.create}</Tooltip.Content>
+	</Tooltip.Root>
 
-			{#each section.items as item (item.href)}
-				{@const active = isActive(item.href)}
-				{@const label = t.nav[item.labelKey]}
-				{@const Icon = item.icon}
-				<!--
-					Wrapped in a Tooltip in both states and disabled when expanded,
-					rather than swapping between a Tooltip and a plain link. Swapping
-					changes the element at this position, so the link is torn down and
-					rebuilt on every toggle — and a freshly mounted node has no previous
-					value to transition from. Everything below would land on its target
-					classes on the first frame while the rail slid, which is the jump
-					the rest of this file exists to avoid.
+	<nav class={cn('mt-3 space-y-0.5', collapsed && 'mt-4')} aria-label={t.nav.sections}>
+		{#each sections as item (item.href)}
+			{@const active = isActive(item.href)}
+			{@const Icon = item.Icon}
+			<Tooltip.Root disabled={!collapsed}>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<a
+							{...props}
+							href={item.href}
+							onclick={onNavigate}
+							aria-current={active ? 'page' : undefined}
+							aria-label={collapsed ? item.label : undefined}
+							class={cn(
+								'flex h-7 items-center rounded-md text-xs font-medium transition-colors',
+								collapsed ? 'justify-center px-0' : 'gap-2 px-2',
+								active
+									? 'bg-background text-foreground shadow-2xs ring-1 ring-border'
+									: 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+							)}
+						>
+							<Icon class="size-3.5 shrink-0" />
+							{#if !collapsed}<span class="truncate">{item.label}</span>{/if}
+						</a>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content side="right">{item.label}</Tooltip.Content>
+			</Tooltip.Root>
+		{/each}
+	</nav>
 
-					aria-label names the link explicitly when collapsed: the label span
-					stays in the DOM, clipped by the row's overflow edge, and not every
-					screen reader announces a clipped text node reliably.
-				-->
-				<Tooltip.Root disabled={!collapsed}>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<a
-								{...props}
-								href={item.href}
-								onclick={onNavigate}
-								aria-current={active ? "page" : undefined}
-								aria-label={collapsed ? label : undefined}
-								class={cn(
-									// Geometrically identical in both states — no width, gap or
-									// padding swap. That is the whole trick behind the
-									// animation: nothing inside the rail moves, and the rail's
-									// own edge travels over the content and clips it. The moment
-									// the row changes shape, icons drift and the illusion goes.
-									//
-									// Combined with the container's px-3 (see app-sidebar),
-									// px-2 here puts the icon 20px from the rail edge, which is
-									// where the collapsed layout lands it too.
-									"relative flex h-10 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-sm",
-									// Colour only, and pointedly not on MOTION. Hover has
-									// nothing to do with the collapse, and at 1000ms a row would
-									// take a full second to light up under the cursor.
-									"transition-[background-color,color] duration-[400ms]",
-									active
-										? "bg-muted font-medium text-foreground"
-										: "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-								)}
-							>
-								<!--
-									Active marker grows from the row's centre line rather than
-									fading, so moving between pages reads as the bar travelling.
-									On the row's own 400ms and not MOTION: this fires on
-									navigation, not on collapse, and a marker that took a full
-									second to arrive would still be growing well after the new
-									page had rendered.
-								-->
-								<span
-									aria-hidden="true"
-									class={cn(
-										"absolute left-0 w-0.5 rounded-r-full bg-foreground transition-[height,opacity] duration-[400ms]",
-										active ? "h-5 opacity-100" : "h-0 opacity-0"
-									)}
-								></span>
-								<!--
-									Never scales. It is the fixed point the slide is measured
-									against — if it grows, the rail stops looking like it is
-									passing over the row and starts looking like the row is
-									reacting to it.
-								-->
-								<Icon class="size-4 shrink-0" />
-								<!--
-									No transition at all, which is the point. The label keeps its
-									natural width the whole time and the row's overflow-hidden
-									edge cuts it off as the rail narrows.
+	{#if !collapsed}
+		<label class="relative mt-4 block">
+			<span class="sr-only">{t.nav.searchWorkbooks}</span>
+			<Search
+				class="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground"
+			/>
+			<input
+				bind:value={filter}
+				type="search"
+				placeholder={t.nav.searchWorkbooks}
+				class="h-7 w-full rounded-md border border-border bg-background/70 pr-2 pl-7 text-caption outline-none transition focus:border-brand/40 focus:bg-background focus:ring-2 focus:ring-brand/10"
+			/>
+		</label>
 
-									shrink-0 is load-bearing: without it flex squeezes the span as
-									the row narrows and the text reflows or wraps instead of being
-									cleanly clipped.
-								-->
-								<span class="shrink-0 whitespace-nowrap">{label}</span>
-							</a>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="right">{label}</Tooltip.Content>
-				</Tooltip.Root>
-			{/each}
+		<div class="mt-3 flex min-h-0 flex-1 flex-col">
+			<p
+				class="px-1 text-caption font-semibold tracking-wide text-muted-foreground/80 uppercase"
+			>
+				{t.nav.recentWorkbooks}
+			</p>
+
+			<div class="mt-1 min-h-0 flex-1 space-y-px overflow-y-auto pb-4">
+				{#if workbooks.isPending}
+					{#each Array(4) as _, index (index)}
+						<div class="h-7 animate-pulse rounded-md bg-foreground/5"></div>
+					{/each}
+				{:else if visibleWorkbooks.length === 0}
+					<p class="px-1 py-2 text-caption text-muted-foreground">
+						{filter.trim() ? t.nav.noMatches : t.nav.noWorkbooks}
+					</p>
+				{:else}
+					{#each visibleWorkbooks as workbook (workbook.id)}
+						{@const active = isActive(`/workbooks/${workbook.id}`)}
+						<a
+							href={`/workbooks/${workbook.id}`}
+							onclick={onNavigate}
+							aria-current={active ? 'page' : undefined}
+							class={cn(
+								'flex h-7 items-center gap-2 rounded-md px-2 transition-colors hover:bg-background/80',
+								active && 'bg-background shadow-2xs ring-1 ring-border'
+							)}
+						>
+							<span
+								class={cn('size-1.5 shrink-0 rounded-full', statusTone(workbook.status))}
+								aria-hidden="true"
+							></span>
+							<span class="min-w-0 flex-1 truncate text-caption">{workbook.name}</span>
+						</a>
+					{/each}
+				{/if}
+			</div>
 		</div>
-	{/each}
-</nav>
+	{/if}
+</div>

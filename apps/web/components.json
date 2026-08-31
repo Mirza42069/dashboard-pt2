@@ -3,14 +3,13 @@
   "style": "lyra",
   "tailwind": {
     "css": "src/app.css",
-    "baseColor": "neutral"
+    "baseColor": "slate"
   },
   "aliases": {
     "components": "$lib/components",
     "lib": "$lib",
     "utils": "@DashboardPT2/ui/lib/utils",
-    "ui": "@DashboardPT2/ui/components",
-    "hooks": "@DashboardPT2/ui/hooks"
+    "ui": "@DashboardPT2/ui/components"
   },
   "typescript": true,
   "registry": "https://shadcn-svelte.com/registry",

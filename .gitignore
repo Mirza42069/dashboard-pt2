@@ -56,6 +56,3 @@ coverage
 .cache
 tmp
 temp
-
-.vercel
-.env*

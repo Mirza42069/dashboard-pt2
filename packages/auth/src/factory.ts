@@ -24,7 +24,7 @@ export function createAuthInstance({
   enableSignUp = false,
 }: CreateAuthInstanceOptions = {}) {
   return betterAuth({
-    appName: "Ledgerhouse",
+    appName: "Tickmark",
     database: prismaAdapter(database, {
       provider: "postgresql",
     }),

@@ -4,16 +4,16 @@ import dotenv from "dotenv";
 import { defineConfig } from "prisma/config";
 
 dotenv.config({
-  path: "../../apps/web/.env",
+  path: "../../.env.local",
 });
 
-const directUrl = process.env.DIRECT_URL;
+const databaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 const isSchemaDiff = process.argv.includes("diff");
-const requiresDirectUrl =
+const requiresDatabaseUrl =
   process.argv.some((argument) => ["push", "studio"].includes(argument)) ||
   (process.argv.includes("migrate") && !isSchemaDiff);
-if (requiresDirectUrl && !directUrl) {
-  throw new Error("DIRECT_URL is required for Prisma migrations and database administration.");
+if (requiresDatabaseUrl && !databaseUrl) {
+  throw new Error("DIRECT_URL or DATABASE_URL is required for Prisma migrations and administration.");
 }
 
 export default defineConfig({
@@ -23,6 +23,6 @@ export default defineConfig({
   },
   datasource: {
     // Generate and validate do not connect, so they must remain usable without owner credentials.
-    url: directUrl ?? "postgresql://prisma:prisma@localhost:5432/ledgerhouse",
+    url: databaseUrl ?? "postgresql://prisma:prisma@localhost:5432/ledgerhouse",
   },
 });

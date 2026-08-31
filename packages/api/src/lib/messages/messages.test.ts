@@ -65,27 +65,33 @@ describe("the Indonesian message catalog", () => {
 
 describe("localeFromHeaders", () => {
   test("reads the locale cookie", () => {
-    expect(localeFromHeaders(headers("v2.locale=en"))).toBe("en");
-    expect(localeFromHeaders(headers("v2.locale=id"))).toBe("id");
+    expect(localeFromHeaders(headers("dashboardpt2.locale=en"))).toBe("en");
+    expect(localeFromHeaders(headers("dashboardpt2.locale=id"))).toBe("id");
   });
 
   test("finds it alongside other cookies", () => {
-    expect(localeFromHeaders(headers("v2.company=abc; v2.locale=en; other=1"))).toBe("en");
+    expect(
+      localeFromHeaders(headers("dashboardpt2.company=abc; dashboardpt2.locale=en; other=1")),
+    ).toBe("en");
+  });
+
+  test("accepts the legacy cookie during migration", () => {
+    expect(localeFromHeaders(headers("v2.locale=en"))).toBe("en");
   });
 
   test("falls back when there is nothing usable", () => {
     expect(localeFromHeaders(headers())).toBe(DEFAULT_LOCALE);
-    expect(localeFromHeaders(headers("v2.locale=fr"))).toBe(DEFAULT_LOCALE);
-    expect(localeFromHeaders(headers("v2.locale="))).toBe(DEFAULT_LOCALE);
+    expect(localeFromHeaders(headers("dashboardpt2.locale=fr"))).toBe(DEFAULT_LOCALE);
+    expect(localeFromHeaders(headers("dashboardpt2.locale="))).toBe(DEFAULT_LOCALE);
   });
 
   /**
-   * A substring match would read the locale off `not.v2.locale=en`, which is a
+   * A substring match would read the locale off `not.dashboardpt2.locale=en`, which is a
    * name any caller can put in their own cookie jar. The lookup splits on `;`
    * and compares the whole name for exactly this reason.
    */
   test("does not match a cookie whose name merely ends in the right thing", () => {
-    expect(localeFromHeaders(headers("not.v2.locale=en"))).toBe(DEFAULT_LOCALE);
+    expect(localeFromHeaders(headers("not.dashboardpt2.locale=en"))).toBe(DEFAULT_LOCALE);
   });
 });
 

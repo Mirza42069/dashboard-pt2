@@ -6,12 +6,31 @@
 
   No webfont link: the theme owns typography via --font-sans / --font-mono in
   packages/ui/src/styles/globals.css, which `body { @apply font-sans }` applies.
+
+  No <title> here either, deliberately. Every route sets its own in
+  <svelte:head>, and a default in this file would be a second <title> in the
+  document — browsers take the first, so the page's own would be ignored. The
+  meta below is safe because nothing overrides it per page.
 -->
 <html lang="%app.lang%" class="%app.htmlClass%" style="color-scheme: %app.theme%">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="%sveltekit.assets%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Tickmark is an audit and assurance platform for reconciling ledgers, clearing exceptions, and closing every period with evidence."
+    />
+    <meta name="theme-color" content="#006467" />
+    <meta property="og:site_name" content="Tickmark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Tickmark" />
+    <meta
+      property="og:description"
+      content="Audit-ready reconciliation. Clear the breaks, move reviews forward, and close every account with evidence."
+    />
+    <meta name="twitter:card" content="summary" />
     %sveltekit.head%
   </head>
   <body class="antialiased" data-sveltekit-preload-data="hover">

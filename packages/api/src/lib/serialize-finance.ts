@@ -14,7 +14,9 @@ export type SerializedFinance<T> = T extends bigint
         : T;
 
 function isDecimal(value: object): value is DecimalLike {
-  return value.constructor?.name === "Decimal";
+  return (
+    value.constructor?.name === "Decimal" || Object.prototype.toString.call(value) === "[object Decimal]"
+  );
 }
 
 /** Converts Prisma Decimal and bigint values without losing financial precision. */

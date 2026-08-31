@@ -1,3 +1,4 @@
+import { matchIntent } from "@DashboardPT2/api/lib/agent-script";
 import { describe, expect, test } from "bun:test";
 
 import { en } from "./en";
@@ -63,22 +64,24 @@ describe("the Indonesian dictionary", () => {
     "auth.email", // loanwords and acronyms Indonesian took whole
     "users.email",
     "actions.typeRfi",
-    "projects.statusLabel",
-    "tickets.statusColumn",
     "users.statusColumn",
-    "boq.subtotal",
-    "schedule.rowTotal",
-    "projectImport.rowKinds.item",
+    "workbooks.colStatus",
+    "imports.colStatus",
+    "imports.colFormat",
     "settings.textSizeNormal",
     "settings.english", // the switcher names each language in itself
     "settings.indonesian",
     "users.roleAdmin", // role names, which the product treats as proper nouns
     "users.roleSuperAdmin",
-    "projects.tabBaseline", // construction terms Indonesian site engineers use as-is
-    "projectUpdate.sectionBoq",
-    "baseline.stepBoq",
-    "boq.revision", // "Rev" abbreviates revisi just as well as revision
-    "projects.statusFilterLabel", // pure format strings, nothing to translate
+    // DJP's own names for its forms and files. Translating "Faktur Keluaran"
+    // into English would be wrong in the English UI too — it is what the
+    // document is called, in the only language the tax office issues it in.
+    "workbook.fakturLabel",
+    "workbook.fakturDetail",
+    "workbook.bppuLabel",
+    "workbook.bppuDetail",
+    "workbook.downloadXlsx",
+    "workbook.version", // pure format strings, nothing to translate
     "actions.fromTo",
   ]);
 
@@ -92,4 +95,39 @@ describe("the Indonesian dictionary", () => {
 
     expect(untranslated).toEqual([]);
   });
+});
+
+/**
+ * The agent panel's suggestion chips are prompts, not labels.
+ *
+ * Tapping one sends its text to the server, where an ordered regex table
+ * (MATCHERS in packages/api/src/lib/agent-script.ts) decides which work to run.
+ * The chips and that table are therefore coupled across two packages and two
+ * languages, with nothing in the type system holding them together: a chip can
+ * be reworded into perfectly good prose that matches no pattern at all, and the
+ * only symptom is the agent answering a suggested question with "here is what I
+ * can do instead".
+ *
+ * So this asserts the coupling directly. It is the reason the dictionary entries
+ * carry a comment telling translators which word has to survive.
+ */
+describe("the agent suggestion chips", () => {
+  const EXPECTED = {
+    suggestReconcile: "reconcile_account",
+    suggestExceptions: "open_exceptions",
+    suggestStatus: "close_status",
+    suggestLarge: "large_items",
+  } as const;
+
+  for (const [locale, dict] of [
+    ["en", en],
+    ["id", id],
+  ] as const) {
+    for (const [key, intent] of Object.entries(EXPECTED)) {
+      test(`${locale}: "${key}" still reaches ${intent}`, () => {
+        const prompt = (dict.chat as Record<string, string>)[key];
+        expect(matchIntent(prompt)).toBe(intent);
+      });
+    }
+  }
 });

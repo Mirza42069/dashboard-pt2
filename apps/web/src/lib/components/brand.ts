@@ -1,4 +1,4 @@
-export const BRAND_NAME = "Ledgerhouse";
+export const BRAND_NAME = "Tickmark";
 
 /**
  * Where an account that cannot use the app reaches a human.

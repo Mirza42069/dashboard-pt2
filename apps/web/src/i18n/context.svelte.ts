@@ -49,7 +49,7 @@ function i18n(): I18n {
 
 /**
  * The whole typed dictionary. Replaces the template's `useT()` one-for-one:
- * `const t = getT(); t.nav.projects`.
+ * `const t = getT(); t.nav.reconciliations`.
  *
  * Returns the context object's `dict` getter result, so callers holding `t`
  * across a locale change see the new strings.

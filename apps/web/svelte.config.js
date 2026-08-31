@@ -9,6 +9,8 @@ const config = {
   preprocess: vitePreprocess(),
 
   kit: {
+    // The Vercel adapter creates symlinks that require elevated privileges on
+    // Windows. Local builds use auto; Vercel sets this variable in its Linux build.
     adapter: process.env.VERCEL
       ? adapterVercel({ regions: ["sin1"] })
       : adapterAuto(),

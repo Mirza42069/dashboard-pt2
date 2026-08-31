@@ -18,30 +18,33 @@
 
 	let open = $state(false);
 
+	/**
+	 * Only fetched once the popover is opened. It is a bell in the top bar of
+	 * every authenticated page — fetching eagerly would put a query behind every
+	 * navigation for a panel most readers never open.
+	 */
 	const query = createQuery(() => ({
 		...orpc.activity.list.queryOptions({ input: { limit: 10, offset: 0 } }),
 		enabled: open
 	}));
 
+	/**
+	 * Templates, not stored text: the log renders in the reader's language and
+	 * old rows follow wording changes. An event the dictionary has not caught up
+	 * with reads through `fallback` rather than disappearing — an audit trail
+	 * with a silent hole in it would be worse than a vague line.
+	 */
 	function describe(entry: {
 		entityType: string;
 		action: string;
-		actorName: string;
+		actorName: string | null;
 		entityLabel: string;
-		detail: string | null;
 	}) {
 		const key = `${entry.entityType}_${entry.action}` as keyof Sentences;
 		const template = t.activity.sentence[key] ?? t.activity.sentence.fallback;
-		let detail = entry.detail ?? '';
-
-		if (entry.entityType === 'user' && entry.action === 'role_changed') {
-			detail = detail === 'admin' ? t.users.roleAdmin : t.users.roleUser;
-		}
-
 		return interpolate(template, {
-			actor: entry.actorName,
-			label: entry.entityLabel,
-			detail
+			actor: entry.actorName ?? t.activity.unknownActor,
+			label: entry.entityLabel
 		});
 	}
 </script>
@@ -56,13 +59,14 @@
 	</Popover.Trigger>
 	<Popover.Content
 		side="bottom"
-		align="center"
+		align="end"
 		sideOffset={8}
 		aria-label={t.activity.title}
 		class="w-[min(24rem,calc(100vw-1.5rem))] max-w-none p-0"
 	>
 		<div class="border-b px-4 py-3">
-			<p class="font-semibold text-foreground">{t.activity.title}</p>
+			<p class="text-sm font-semibold text-foreground">{t.activity.title}</p>
+			<p class="text-caption text-muted-foreground">{t.activity.description}</p>
 		</div>
 		<div class="max-h-[min(28rem,calc(100svh-5rem))] overflow-y-auto p-2">
 			{#if query.isPending}
@@ -72,14 +76,14 @@
 					{/each}
 				</div>
 			{:else if query.isError}
-				<p class="px-3 py-8 text-center text-destructive">{query.error.message}</p>
+				<p class="px-3 py-8 text-center text-sm text-destructive">{t.common.loadFailed}</p>
 			{:else if (query.data?.entries.length ?? 0) === 0}
-				<p class="px-3 py-8 text-center text-muted-foreground">{t.activity.empty}</p>
+				<p class="px-3 py-8 text-center text-sm text-muted-foreground">{t.activity.empty}</p>
 			{:else}
 				{#each query.data?.entries ?? [] as entry (entry.id)}
 					<div class="px-3 py-2.5">
-						<p class="text-foreground">{describe(entry)}</p>
-						<p class="mt-1 text-xs text-muted-foreground">{formatDateTime(entry.createdAt)}</p>
+						<p class="text-sm text-foreground">{describe(entry)}</p>
+						<p class="mt-1 text-caption text-muted-foreground">{formatDateTime(entry.createdAt)}</p>
 					</div>
 				{/each}
 			{/if}

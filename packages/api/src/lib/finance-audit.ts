@@ -10,6 +10,7 @@ type AuditInput = {
     | "APPROVED"
     | "REOPENED"
     | "IMPORT_METADATA_CREATED"
+    | "IMPORT_ATTACHED"
     | "EXCEPTION_RESOLVED";
   fromStatus?: ReconciliationWorkflowStatus | null;
   toStatus?: ReconciliationWorkflowStatus | null;

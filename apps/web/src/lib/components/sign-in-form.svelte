@@ -47,7 +47,7 @@
 					queryClient.clear();
 					// Only same-origin paths — an attacker-supplied absolute URL in
 					// ?next= would otherwise turn this into an open redirect.
-					const target = next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+					const target = next?.startsWith('/') && !next.startsWith('//') ? next : '/workbooks';
 					void goto(target, { invalidateAll: true });
 				},
 				onError: (error: {

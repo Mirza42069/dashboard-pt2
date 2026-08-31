@@ -57,7 +57,7 @@
 		{#snippet child({ props })}
 			<Button {...props} variant="ghost" size="sm" aria-label={t.users.myAccount}>
 				<span
-					class="flex size-5 items-center justify-center rounded-full bg-muted text-[0.6875rem] font-medium"
+					class="flex size-5 items-center justify-center rounded-full bg-muted text-caption font-medium"
 				>
 					{initials(user.name)}
 				</span>

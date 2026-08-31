@@ -8,6 +8,7 @@
 	user={data.shellUser}
 	initialCollapsed={data.preferences.sidebarCollapsed}
 	initialTextScale={data.preferences.textScale}
+	initialAgentPanel={data.preferences.agentPanel}
 >
 	{@render children()}
 </AppShell>

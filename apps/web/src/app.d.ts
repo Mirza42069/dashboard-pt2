@@ -1,5 +1,6 @@
 import type { AppRouterClient } from "@DashboardPT2/api/routers/index";
 import type { Locale } from "./i18n";
+import type { AgentPanelState } from "./lib/agent-panel";
 import type { TextScale } from "./lib/text-scale";
 import type { Theme } from "./lib/theme";
 
@@ -15,6 +16,7 @@ declare global {
       theme: Theme;
       textScale: TextScale;
       sidebarCollapsed: boolean;
+      agentPanel: AgentPanelState;
     }
 
     interface Locals {

@@ -10,4 +10,4 @@ export function createSeedAuth(database: SeedDatabase) {
 }
 
 export const credentialIssuer = createLocalAccountIssuer("credential");
-export const hashSeedPassword = hashPassword;
+export const hashSeedPassword: (password: string) => Promise<string> = hashPassword;

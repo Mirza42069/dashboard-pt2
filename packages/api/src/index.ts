@@ -1,7 +1,7 @@
 import { ORPCError, os } from "@orpc/server";
 
 import type { Context } from "./context";
-import { readCookie } from "./lib/cookies";
+import { readAppCookie } from "./lib/cookies";
 import { financeDatabase, objectField, stringField } from "./lib/finance-database";
 import { normalizedFinanceRole } from "./lib/finance-permissions";
 
@@ -31,9 +31,10 @@ const requireOrganization = o.middleware(async ({ context, next }) => {
   }
 
   const database = financeDatabase(context.database);
-  const requestedOrganizationId =
-    context.headers.get("x-organization-id") ?? readCookie(context.headers, "v2.company");
-  const memberships = await database.organizationMembership.findMany({
+  const headerOrganizationId = context.headers.get("x-organization-id");
+  const cookieOrganizationId = readAppCookie(context.headers, "company");
+  let requestedOrganizationId = headerOrganizationId ?? cookieOrganizationId;
+  let memberships = await database.organizationMembership.findMany({
     where: {
       userId: context.session.user.id,
       ...(requestedOrganizationId ? { organizationId: requestedOrganizationId } : {}),
@@ -41,6 +42,15 @@ const requireOrganization = o.middleware(async ({ context, next }) => {
     include: { organization: true, user: true },
     take: requestedOrganizationId ? 1 : 2,
   });
+
+  if (memberships.length === 0 && !headerOrganizationId && cookieOrganizationId) {
+    requestedOrganizationId = undefined;
+    memberships = await database.organizationMembership.findMany({
+      where: { userId: context.session.user.id },
+      include: { organization: true, user: true },
+      take: 2,
+    });
+  }
 
   if (memberships.length === 0) {
     throw new ORPCError(requestedOrganizationId ? "NOT_FOUND" : "FORBIDDEN", {

@@ -1,4 +1,6 @@
-export const SIDEBAR_COOKIE = "v2.sidebar";
+import { APP_COOKIES } from "@DashboardPT2/api/lib/cookies";
+
+export const SIDEBAR_COOKIE = APP_COOKIES.sidebar;
 
 /**
  * Read server-side so a collapsed sidebar renders collapsed on the very first

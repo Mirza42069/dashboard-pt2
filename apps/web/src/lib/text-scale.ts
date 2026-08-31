@@ -1,8 +1,10 @@
+import { APP_COOKIES } from "@DashboardPT2/api/lib/cookies";
+
 export const TEXT_SCALES = ["normal", "large"] as const;
 export type TextScale = (typeof TEXT_SCALES)[number];
 
 export const DEFAULT_TEXT_SCALE: TextScale = "large";
-export const TEXT_SCALE_COOKIE = "v2.textScale";
+export const TEXT_SCALE_COOKIE = APP_COOKIES.textScale;
 
 /**
  * The class the "large" scale puts on <html>. The rule behind it lives in

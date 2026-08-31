@@ -6,10 +6,10 @@ import type { PageServerLoad } from "./$types";
 export const load: PageServerLoad = async (event) => {
   // Resolved against the auth API, not inferred from the cookie: a stale cookie
   // must fall through to the form so the user can sign in again, rather than
-  // being volleyed to /dashboard and straight back here.
+  // being volleyed to /workbooks and straight back here.
   const session = await getSession(event);
   if (session?.user) {
-    redirect(302, "/dashboard");
+    redirect(302, "/workbooks");
   }
   return {};
 };

@@ -1,8 +1,10 @@
+import { APP_COOKIES } from "@DashboardPT2/api/lib/cookies";
+
 export const THEMES = ["light"] as const;
 export type Theme = (typeof THEMES)[number];
 
 export const DEFAULT_THEME: Theme = "light";
-export const THEME_COOKIE = "v2.theme";
+export const THEME_COOKIE = APP_COOKIES.theme;
 
 export function isTheme(value: unknown): value is Theme {
   return typeof value === "string" && (THEMES as readonly string[]).includes(value);
@@ -16,7 +18,7 @@ export function isTheme(value: unknown): value is Theme {
  * response is written, so the correct theme is in the very first byte of HTML:
  * no script, no flash.
  *
- * Ledgerhouse intentionally exposes one light theme so every operational screen
+ * Tickmark intentionally exposes one light theme so every operational screen
  * uses the same contrast, chart palette, and semantic status colors.
  */
 export function resolveTheme(value: string | undefined): Theme {

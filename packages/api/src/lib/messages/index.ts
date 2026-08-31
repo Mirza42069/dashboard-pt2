@@ -1,4 +1,4 @@
-import { readCookie } from "../cookies";
+import { APP_COOKIES, readAppCookie } from "../cookies";
 import { en, type MessageDictionary } from "./en";
 import { id } from "./id";
 
@@ -21,8 +21,8 @@ export type Locale = (typeof LOCALES)[number];
 /** Matches apps/web/src/i18n/index.ts — the product is Indonesian by default. */
 export const DEFAULT_LOCALE: Locale = "id";
 
-/** Written by apps/web/src/i18n/provider.tsx. Keep the name in step with it. */
-export const LOCALE_COOKIE = "v2.locale";
+/** Written by apps/web/src/i18n/context.svelte.ts. */
+export const LOCALE_COOKIE = APP_COOKIES.locale;
 
 const DICTIONARIES: Record<Locale, MessageDictionary> = { en, id };
 
@@ -45,7 +45,7 @@ export function dictionaryFor(locale: Locale): MessageDictionary {
  * two places that would each silently fall back to English if missed.
  */
 export function localeFromHeaders(headers: Headers): Locale {
-  const value = readCookie(headers, LOCALE_COOKIE);
+  const value = readAppCookie(headers, "locale");
   return isLocale(value) ? value : DEFAULT_LOCALE;
 }
 

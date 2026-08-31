@@ -3,6 +3,7 @@ export const MAX_AI_WORKBOOK_BYTES = 50 * 1024 * 1024;
 export const MAX_AI_PDF_BYTES = 50_000_000 - 1;
 export const MAX_AI_PDF_PAGES = 25;
 export const MAX_WORKBOOK_SHEETS = 100;
+export const MAX_WORKBOOK_ROWS = 10_000;
 
 export const AI_WORKBOOK_SIZE_LABEL = "50 MB";
 export const AI_PDF_SIZE_LABEL = "50 MB";

@@ -20,12 +20,17 @@
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
+    "@vercel/blob": "^2.8.0",
     "dotenv": "catalog:",
+    "exceljs": "^4.4.0",
+    "fast-xml-parser": "^5.11.1",
+    "yauzl": "^3.4.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@DashboardPT2/config": "workspace:*",
     "@types/bun": "^1.3.14",
+    "@types/yauzl": "^3.4.0",
     "typescript": "catalog:"
   }
 }

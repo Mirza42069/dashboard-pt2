@@ -200,8 +200,11 @@ export const id = {
     projectCodeInUse: "Kode proyek itu sudah dipakai.",
   },
   enums: {
-    // Copied verbatim from apps/web/src/i18n/id.ts `status.period`, so a toast
-    // and the table beside it call a period the same thing.
+    // The reporting-period vocabulary, kept here so a toast and the table beside
+    // it call a period the same thing. It no longer mirrors a section of
+    // apps/web/src/i18n/id.ts — `status.period` was replaced there by
+    // `status.reconciliation`, which is a different workflow with different
+    // states — so this block is now its own source rather than a copy.
     periodStatus: {
       open: "Belum dimulai",
       draft: "Sedang diisi",

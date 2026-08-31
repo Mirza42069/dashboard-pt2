@@ -3,8 +3,9 @@
   "services": {
     "web": {
       "root": "apps/web",
-      "framework": "sveltekit",
-      "installCommand": "cd ../.. && bun install"
+      "framework": "sveltekit-1",
+      "installCommand": "cd ../.. && bun install",
+      "buildCommand": "cd ../.. && bun run db:migrate:deploy && bun run --cwd apps/web build"
     }
   },
   "rewrites": [

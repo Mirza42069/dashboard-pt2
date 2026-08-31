@@ -1,3 +1,5 @@
+import { APP_COOKIES } from "@DashboardPT2/api/lib/cookies";
+
 /**
  * The admin's active company.
  *
@@ -7,9 +9,9 @@
  * Regular users ignore this entirely: their scope comes from user.companyId,
  * so setting the cookie cannot widen what they see.
  *
- * Must stay in sync with COMPANY_COOKIE in packages/api/src/lib/scope.ts.
+ * The shared name also lets the API resolve the company on RPC requests.
  */
-export const COMPANY_COOKIE = "v2.company";
+export const COMPANY_COOKIE = APP_COOKIES.company;
 
 export function writeCompanyCookie(companyId: string) {
   // `secure` outside development for the same reason as the auth cookie: plain

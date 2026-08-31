@@ -1,17 +1,15 @@
 <script lang="ts" module>
-	import { Badge } from "@DashboardPT2/ui/components/badge";
+	import { Badge, type BadgeVariant } from "@DashboardPT2/ui/components/badge";
 	import {
-		CircleAlert,
 		CircleCheck,
-		CircleDashed,
 		CircleDot,
-		CircleSlash,
-		Hammer,
+		Eye,
 		Lock,
 		OctagonX,
-		PauseCircle,
 		Pencil,
+		RotateCcw,
 		Send,
+		TriangleAlert,
 		type IconComponent
 	} from "@DashboardPT2/ui/components/icons";
 
@@ -22,41 +20,43 @@
 	 *
 	 * These deliberately do NOT use --chart-1..5. That ramp encodes magnitude, so
 	 * painting statuses with it would imply an ordering that does not exist.
+	 *
+	 * BadgeVariant is imported rather than redeclared. A local copy of the union
+	 * used to live here and had already fallen a member behind the real one, so a
+	 * variant this file rejected was one the Badge accepted.
 	 */
-	type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "ghost";
 	type Descriptor = { variant: BadgeVariant; icon: IconComponent };
 
 	const STYLES: Record<string, Record<string, Descriptor>> = {
-		project: {
-			planning: { variant: "outline", icon: CircleDashed },
-			active: { variant: "default", icon: Hammer },
-			on_hold: { variant: "secondary", icon: PauseCircle },
-			completed: { variant: "ghost", icon: CircleCheck },
-			cancelled: { variant: "destructive", icon: OctagonX }
-		},
-		ticket: {
-			open: { variant: "outline", icon: CircleDot },
-			in_progress: { variant: "default", icon: CircleDot },
-			resolved: { variant: "secondary", icon: CircleCheck },
-			closed: { variant: "ghost", icon: CircleSlash }
+		/**
+		 * Where a reconciliation stands in the close workflow. Seven states, each
+		 * with its own glyph — the distinctions this workflow turns on (never
+		 * opened vs being worked, reopened vs merely unfinished) are exactly the
+		 * ones a shared icon would erase.
+		 *
+		 * `reopened` is the only destructive variant. It is the one state that is
+		 * somebody else waiting on you, and it should read that way at a glance.
+		 * The two queue states carry `default` because they are what the reviewer
+		 * is looking for; the two settled ones recede.
+		 */
+		reconciliation: {
+			draft: { variant: "outline", icon: Pencil },
+			in_progress: { variant: "secondary", icon: CircleDot },
+			ready_for_review: { variant: "default", icon: Eye },
+			submitted: { variant: "default", icon: Send },
+			approved: { variant: "secondary", icon: CircleCheck },
+			completed: { variant: "ghost", icon: Lock },
+			reopened: { variant: "destructive", icon: RotateCcw }
 		},
 		/**
-		 * Where a progress report stands. Seven states, each with its own glyph —
-		 * the distinctions this workflow turns on (untouched vs being written,
-		 * returned vs merely unfinished) are exactly the ones a shared icon would
-		 * erase.
-		 *
-		 * `returned` is the only destructive variant. It is the one state that is
-		 * somebody else waiting on you, and it should read that way at a glance.
+		 * How much an unmatched difference matters. Three steps, and unlike the
+		 * workflow above this one *is* ordered — but it is ordered by risk, not
+		 * magnitude, so it still stays off the chart ramp.
 		 */
-		period: {
-			open: { variant: "outline", icon: CircleDashed },
-			draft: { variant: "outline", icon: Pencil },
-			submitted: { variant: "default", icon: Send },
-			reviewed: { variant: "default", icon: CircleDot },
-			approved: { variant: "secondary", icon: CircleCheck },
-			locked: { variant: "ghost", icon: Lock },
-			returned: { variant: "destructive", icon: CircleAlert }
+		exceptionSeverity: {
+			info: { variant: "secondary", icon: CircleDot },
+			warning: { variant: "outline", icon: TriangleAlert },
+			error: { variant: "destructive", icon: OctagonX }
 		}
 	};
 </script>
@@ -68,7 +68,7 @@
 	let { kind, value }: { kind: StatusKind; value: string | null | undefined } = $props();
 
 	const t = getT();
-	const descriptor = $derived(value ? STYLES[kind]?.[value] : undefined);
+	const descriptor = $derived(value ? STYLES[kind]?.[value.toLowerCase()] : undefined);
 </script>
 
 {#if !value || !descriptor}

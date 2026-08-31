@@ -1,3 +1,5 @@
+import { APP_COOKIES } from "@DashboardPT2/api/lib/cookies";
+
 import { en, type Dictionary } from "./en";
 import { id } from "./id";
 
@@ -5,7 +7,7 @@ export const LOCALES = ["en", "id"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "id";
-export const LOCALE_COOKIE = "v2.locale";
+export const LOCALE_COOKIE = APP_COOKIES.locale;
 
 const DICTIONARIES: Record<Locale, Dictionary> = { en, id };
 

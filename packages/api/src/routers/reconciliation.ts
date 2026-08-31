@@ -3,32 +3,47 @@ import z from "zod";
 
 import { appendReconciliationAudit } from "../lib/finance-audit";
 import { financeDatabase, stringField } from "../lib/finance-database";
+import { resolveReconciliationTarget } from "../lib/finance-defaults";
 import { requireFinancePermission } from "../lib/finance-permissions";
 import { serializeFinanceValue } from "../lib/serialize-finance";
 import { organizationProcedure } from "../index";
 
 const id = z.string().trim().min(1).max(191);
+const reconciliationStatus = z.enum([
+  "DRAFT",
+  "IN_PROGRESS",
+  "READY_FOR_REVIEW",
+  "SUBMITTED",
+  "APPROVED",
+  "COMPLETED",
+  "REOPENED",
+]);
+
 const pagination = z.object({
   cursor: id.optional(),
   limit: z.number().int().min(1).max(100).default(25),
-  status: z
-    .enum([
-      "DRAFT",
-      "IN_PROGRESS",
-      "READY_FOR_REVIEW",
-      "SUBMITTED",
-      "APPROVED",
-      "COMPLETED",
-      "REOPENED",
-    ])
-    .optional(),
+  /**
+   * One status, or several.
+   *
+   * The array form exists for the archive, which is "approved or completed" —
+   * a single filter over one paginated list rather than two lists a caller has
+   * to merge and re-sort, which is where the cursor would have stopped meaning
+   * anything. A bare string still works exactly as before.
+   */
+  status: z.union([reconciliationStatus, z.array(reconciliationStatus).min(1).max(7)]).optional(),
 });
 
+/**
+ * What opening a period actually requires.
+ *
+ * The legal entity and ledger account used to be picked here and are now
+ * derived from the name — see resolveReconciliationTarget. They are still
+ * columns on the row, and still required by the schema; the caller just no
+ * longer has to know they exist.
+ */
 const createReconciliation = z
   .object({
     name: z.string().trim().min(1).max(200),
-    legalEntityId: id,
-    ledgerAccountId: id,
     periodStart: z.coerce.date(),
     periodEnd: z.coerce.date(),
     currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
@@ -72,7 +87,9 @@ export const reconciliationRouter = {
       const rows = await database.reconciliation.findMany({
         where: {
           organizationId: context.organization.id,
-          ...(input?.status ? { status: input.status } : {}),
+          ...(input?.status
+            ? { status: Array.isArray(input.status) ? { in: input.status } : input.status }
+            : {}),
         },
         include: {
           legalEntity: true,
@@ -114,32 +131,23 @@ export const reconciliationRouter = {
       requireFinancePermission(context.organization.role, "reconciliation:create");
       const database = financeDatabase(context.database);
       const organizationId = context.organization.id;
-      const [legalEntity, ledgerAccount] = await Promise.all([
-        database.legalEntity.findFirst({
-          where: { id: input.legalEntityId, organizationId },
-          select: { id: true },
-        }),
-        database.ledgerAccount.findFirst({
-          where: { id: input.ledgerAccountId, organizationId },
-          select: { id: true, legalEntityId: true },
-        }),
-      ]);
-      if (!legalEntity || !ledgerAccount) {
-        throw new ORPCError("NOT_FOUND", { message: "Legal entity or ledger account not found." });
-      }
-      const accountEntityId = stringField(ledgerAccount, "legalEntityId");
-      if (accountEntityId && accountEntityId !== input.legalEntityId) {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "The ledger account does not belong to the selected legal entity.",
-        });
-      }
 
       const row = await database.$transaction(async (transaction) => {
+        // Inside the transaction because it may create the entity and the
+        // account: if the reconciliation insert then fails — a duplicate period,
+        // most likely — an account nobody asked for must not survive it.
+        const target = await resolveReconciliationTarget(transaction, {
+          organizationId,
+          organizationName: context.organization.name,
+          name: input.name,
+          currency: input.currency,
+        });
+
         const reconciliation = await transaction.reconciliation.create({
           data: {
             organizationId,
-            legalEntityId: input.legalEntityId,
-            ledgerAccountId: input.ledgerAccountId,
+            legalEntityId: target.legalEntityId,
+            ledgerAccountId: target.ledgerAccountId,
             name: input.name,
             periodStart: input.periodStart,
             periodEnd: input.periodEnd,

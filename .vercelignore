@@ -9,3 +9,7 @@
 local.db
 local.db-*
 .alchemy/
+.turbo/
+**/.turbo/
+**/dist/
+**/.svelte-kit/

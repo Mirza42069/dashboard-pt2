@@ -22,6 +22,8 @@ export async function getSession(event: RequestEvent) {
 }
 
 type RequireSessionOptions = {
+  /** Set on the password-change page so first-login users can reach it. */
+  skipPasswordChangeRedirect?: boolean;
   /** Set on /trial-ended itself, for the same reason. */
   skipTrialEndedRedirect?: boolean;
 };
@@ -34,13 +36,14 @@ export async function requireSession(
   const account = session?.user;
 
   if (!account) {
-    redirect(302, "/login");
+    const next = `${event.url.pathname}${event.url.search}`;
+    redirect(302, `/login?next=${encodeURIComponent(next)}`);
   }
 
   const user = account;
 
-  if (user.mustChangePassword) {
-    redirect(302, "/set-password?error=SETUP_REQUIRED");
+  if (!options.skipPasswordChangeRedirect && user.mustChangePassword) {
+    redirect(302, "/change-password?setup=1");
   }
 
   // Sign-in can already be refused for a lapsed trial, but that check fires
@@ -58,7 +61,7 @@ export async function requirePermission(event: RequestEvent, permission: Permiss
   const resolved = await requireSession(event);
 
   if (!hasPermission(roleOf(resolved.user), permission)) {
-    redirect(302, "/dashboard");
+    redirect(302, "/workbooks");
   }
 
   return resolved;
