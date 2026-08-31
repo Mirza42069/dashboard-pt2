@@ -1,91 +1,33 @@
-# DashboardPT2
+# Ledgerhouse
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines SvelteKit, Self, ORPC, and more.
+Ledgerhouse is a multi-organization bank-reconciliation dashboard built with SvelteKit, oRPC, Prisma, Neon PostgreSQL, Better Auth, and Tailwind CSS.
 
-## Features
+## Local Setup
 
-- **TypeScript** - For type safety and improved developer experience
-- **SvelteKit** - Web framework for building Svelte apps
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Prisma** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
-- **Turborepo** - Optimized monorepo build system
+1. Install dependencies with `bun install`.
+2. Copy the variable names from `apps/web/.env.example` into ignored `apps/web/.env`.
+3. Set `DATABASE_URL` to a pooled, least-privileged Neon runtime connection string.
+4. Set `DIRECT_URL` to a rotated direct Neon owner connection string. Keep this variable local; the Vercel sync script intentionally excludes it.
+5. Set `BETTER_AUTH_SECRET` to at least 32 random characters and `BETTER_AUTH_URL` to `http://localhost:5173`.
+6. Apply the schema with `bun run db:migrate`.
+7. Bootstrap the organization, first legal entity, bank account, and administrator with `bun run db:seed-admin`.
+8. Start the application with `bun run dev:web`.
 
-## Getting Started
+Public signup is disabled. The bootstrap command requires an interactive terminal and accepts administrator credentials without echoing the password.
 
-First, install the dependencies:
+## Verification
 
-```bash
-bun install
-```
+- `bun run db:generate`
+- `bun run check-types`
+- `bun test`
+- `bun run build`
 
-## Database Setup
-
-This project uses PostgreSQL with Prisma.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/web/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-
-```bash
-bun run db:push
-```
-
-Then, run the development server:
-
-```bash
-bun run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser to see the fullstack application.
+Local Windows builds use `adapter-auto` because creating Vercel function symlinks requires Developer Mode or elevated privileges. Vercel builds set `VERCEL=1`, select `adapter-vercel`, and deploy functions to `sin1`.
 
 ## Deployment
 
-### Vercel Services
+1. Link a new project with `bunx vercel link`.
+2. Sync safe runtime variables with `bun run env:production`.
+3. Deploy with `bun run deploy:prod`.
 
-- Target: web + server
-- Config: `vercel.json`
-- Link the project first: bun run deploy:setup
-- Local Vercel dev: bun run dev:vercel
-- Sync preview env: bun run env:preview
-- Sync production env: bun run env:production
-- Dry-run check (no upload): bun run deploy:check
-- Preview deploy: bun run deploy
-- Production deploy: bun run deploy:prod
-  Vercel Services share project environment variables, but deploys do not upload local `.env` files automatically. Link the project with `vercel link`, then run the env sync command before your first deploy (otherwise the deployment starts with no env vars), or pass one-off envs with `vercel deploy -e KEY=value`.
-  Pass Vercel CLI flags to the env sync command directly, for example: `bun run env:production --scope your-team`.
-
-For more details, see the guide on [Deploying to Vercel](https://www.better-t-stack.dev/docs/guides/vercel).
-
-## Project Structure
-
-```
-DashboardPT2/
-├── apps/
-│   └── web/         # Fullstack application (SvelteKit)
-├── packages/
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
-```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run deploy:setup`: Link this repo to a Vercel project (first-time setup)
-- `bun run dev:vercel`: Run the Vercel Services dev environment locally
-- `bun run env:preview`: Sync local env files to the Vercel preview environment
-- `bun run env:production`: Sync local env files to the Vercel production environment
-- `bun run deploy`: Create a Vercel preview deployment
-- `bun run deploy:prod`: Deploy to Vercel production
-- `bun run deploy:check`: Dry-run a deploy to preview framework detection and included files without uploading
+`scripts/sync-vercel-env.ts` rejects `DIRECT_URL`, development auth bypasses, and owner-like database credentials. Never upload the Neon owner connection string as `DATABASE_URL`.

@@ -1,0 +1,1 @@
+-- Baseline marker. The consolidated Ledgerhouse schema is created by the next migration.

@@ -1,0 +1,36 @@
+<script lang="ts">
+	import { ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
+	import { Calendar as CalendarPrimitive } from "bits-ui";
+	import { buttonVariants, type ButtonVariant } from "@DashboardPT2/ui/components/button/index.js";
+	import { cn } from "@DashboardPT2/ui/lib/utils.js";
+
+	let {
+		ref = $bindable(null),
+		class: className,
+		children,
+		variant = "ghost",
+		...restProps
+	}: CalendarPrimitive.NextButtonProps & {
+		variant?: ButtonVariant;
+	} = $props();
+</script>
+
+{#snippet Fallback()}
+	<ChevronRightIcon class={cn("size-4", className)} />
+{/snippet}
+
+<CalendarPrimitive.NextButton
+	bind:ref
+	class={cn(
+		buttonVariants({ variant }),
+		"size-(--cell-size) bg-transparent p-0 select-none disabled:opacity-50 rtl:rotate-180",
+		className
+	)}
+	{...restProps}
+>
+	{#if children}
+		{@render children?.()}
+	{:else}
+		{@render Fallback()}
+	{/if}
+</CalendarPrimitive.NextButton>

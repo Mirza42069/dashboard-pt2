@@ -7,8 +7,28 @@ const DEFAULT_ENVIRONMENT = "preview";
 const VALID_ENVIRONMENTS = new Set(["development", "preview", "production"]);
 const VERCEL_COMMAND = ["bunx", "vercel"] as const;
 const DEFAULT_FILES = ["apps/web/.env"];
-const SKIP_KEYS = new Set(["BETTER_AUTH_URL", "CORS_ORIGIN", "NODE_ENV"]);
-const OVERRIDE_KEYS = new Map([]);
+const SKIP_KEYS = new Set([
+  "BETTER_AUTH_URL",
+  "CORS_ORIGIN",
+  "DATABASE_URL_DIRECT",
+  "DEV_AUTH_BYPASS",
+  "DIRECT_URL",
+  "NODE_ENV",
+  "PUBLIC_POSTGRES_CLAIM_URL",
+]);
+const OVERRIDE_KEYS = new Map<string, string>();
+const PRIVILEGED_DATABASE_USER_PATTERN = /(?:^postgres$|(?:^|[_-])owner(?:$|[_-]))/i;
+
+function containsOwnerDatabaseCredentials(key: string, value: string) {
+  if (!key.includes("DATABASE_URL")) return false;
+
+  try {
+    const username = decodeURIComponent(new URL(value).username);
+    return PRIVILEGED_DATABASE_USER_PATTERN.test(username);
+  } catch {
+    return false;
+  }
+}
 
 const args = process.argv.slice(2);
 const separatorIndex = args.indexOf("--");
@@ -48,6 +68,10 @@ for (const file of envFiles) {
 
   for (const [key, value] of Object.entries(dotenv.parse(readFileSync(file, "utf8")))) {
     if (SKIP_KEYS.has(key)) continue;
+    if (containsOwnerDatabaseCredentials(key, value)) {
+      console.warn(`Skipping ${key}: owner-level database credentials must not be uploaded.`);
+      continue;
+    }
     env.set(key, OVERRIDE_KEYS.get(key) ?? value);
   }
 }

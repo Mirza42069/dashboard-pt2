@@ -7,7 +7,7 @@ if (typeof window !== "undefined") {
   throw new Error("This file should only be imported on the server.");
 }
 
-const serverClient: AppRouterClient = createRouterClient(appRouter, {
+export const serverClient: AppRouterClient = createRouterClient(appRouter, {
   context: async () => {
     const event = getRequestEvent();
     return createContext({

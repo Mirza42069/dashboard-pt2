@@ -1,16 +1,36 @@
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id                     String                    @id
+  name                   String
+  email                  String
+  emailVerified          Boolean                   @default(false)
+  image                  String?
+  username               String?                   @unique
+  displayUsername        String?
+  role                   UserRole                  @default(user)
+  mustChangePassword     Boolean                   @default(false)
+  trialEndsAt            DateTime?
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+  sessions               Session[]
+  accounts               Account[]
+  memberships            OrganizationMembership[]
+  importBatchesCreated   ImportBatch[]             @relation("ImportBatchCreatedBy")
+  reconciliationsOwned   Reconciliation[]          @relation("ReconciliationOwner")
+  reconciliationsCreated Reconciliation[]          @relation("ReconciliationCreatedBy")
+  matchGroupsCreated     MatchGroup[]              @relation("MatchGroupCreatedBy")
+  exceptionsAssigned     ReconciliationException[] @relation("ExceptionAssignedTo")
+  exceptionsResolved     ReconciliationException[] @relation("ExceptionResolvedBy")
+  reconciliationEvents   ReconciliationEvent[]     @relation("ReconciliationEventActor")
+  activityLogs           ActivityLog[]             @relation("ActivityLogActor")
 
   @@unique([email])
   @@map("user")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  user
 }
 
 model Session {

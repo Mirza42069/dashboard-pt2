@@ -9,7 +9,9 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@DashboardPT2/auth": "workspace:*",
     "@DashboardPT2/db": "workspace:*",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@DashboardPT2/config": "workspace:*",
+    "@types/bun": "^1.3.14",
     "typescript": "catalog:"
   }
 }

@@ -1,12 +1,20 @@
 <!doctype html>
-<html lang="en">
+<!--
+  Theme, language and text scale all come from cookies read in hooks.server.ts,
+  so the first byte of HTML is already correct — no flash, and no client-side
+  script rewriting the class after paint.
+
+  No webfont link: the theme owns typography via --font-sans / --font-mono in
+  packages/ui/src/styles/globals.css, which `body { @apply font-sans }` applies.
+-->
+<html lang="%app.lang%" class="%app.htmlClass%" style="color-scheme: %app.theme%">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover">
+  <body class="antialiased" data-sveltekit-preload-data="hover">
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>

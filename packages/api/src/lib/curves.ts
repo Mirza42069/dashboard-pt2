@@ -1,0 +1,464 @@
+/**
+ * The BoQ progress maths.
+ *
+ * Kept as pure functions over plain arrays, separate from any component, for
+ * two reasons: the planned curve is needed by both the schedule footer and the
+ * progress chart and must mean the same thing in both, and the carry-forward
+ * rules below are subtle enough to be worth testing directly. See curves.test.ts
+ * — those cases are the specification, not an afterthought.
+ *
+ * Every function takes periods in chronological order, which is how the API
+ * returns them (ordered by periodIndex).
+ */
+
+export type BoqItemLike = {
+  id: string;
+  parentId: string | null;
+  code: string;
+  description: string;
+  weight: number;
+  sortOrder: number;
+};
+
+export type PeriodLike = { id: string; endDate: string };
+
+export type EntryLike = {
+  boqItemId: string;
+  periodId: string;
+  pctComplete: number;
+  cumulativeQuantity: number | null;
+  cumulativePercent: number | null;
+};
+
+export type ActualSnapshotLike = {
+  periodId: string;
+  cumulativePercent: number;
+};
+
+export type ActualCurveSource = "itemized" | "imported" | null;
+
+export type LeafLike = { id: string; weight: number };
+
+export type Section<T extends BoqItemLike> = { header: T; leaves: T[] };
+export type ScheduleRow<T extends BoqItemLike> = {
+  sectionId: string;
+  section: string;
+  leaf: T;
+};
+
+const cellKey = (itemId: string, periodId: string) => `${itemId}|${periodId}`;
+
+/**
+ * Groups the flat item list into sections and their lines, ordered the way the
+ * grid shows them.
+ */
+export function buildSections<T extends BoqItemLike>(items: T[]): Section<T>[] {
+  const sorted = [...items].sort(
+    (a, b) =>
+      a.sortOrder - b.sortOrder || a.code.localeCompare(b.code, undefined, { numeric: true }),
+  );
+
+  return sorted
+    .filter((item) => item.parentId === null)
+    .map((header) => ({
+      header,
+      leaves: sorted.filter((item) => item.parentId === header.id),
+    }));
+}
+
+/**
+ * The rows of the schedule and progress matrices: one per leaf. A section with
+ * children contributes its children; a childless section prices itself and
+ * appears as a single row. Mirrors the leaf rule the server weights by, so the
+ * grid always shows exactly the lines that carry weight.
+ */
+export function scheduleRows<T extends BoqItemLike>(items: T[]): ScheduleRow<T>[] {
+  const rows: ScheduleRow<T>[] = [];
+  const sorted = [...items].sort(
+    (a, b) =>
+      a.sortOrder - b.sortOrder || a.code.localeCompare(b.code, undefined, { numeric: true }),
+  );
+  const children = new Map<string, T[]>();
+  for (const item of sorted) {
+    if (item.parentId === null) continue;
+    const siblings = children.get(item.parentId) ?? [];
+    siblings.push(item);
+    children.set(item.parentId, siblings);
+  }
+
+  function appendLeaves(item: T, sectionId: string, section: string) {
+    const descendants = children.get(item.id) ?? [];
+    if (descendants.length === 0) {
+      rows.push({ sectionId, section, leaf: item });
+      return;
+    }
+    for (const child of descendants) appendLeaves(child, sectionId, section);
+  }
+
+  for (const root of sorted.filter((item) => item.parentId === null)) {
+    appendLeaves(root, root.id, root.description);
+  }
+
+  return rows;
+}
+
+/** Lookup of planned cells, keyed for the curve functions. */
+export function distributionMap(cells: { boqItemId: string; periodId: string; plannedPct: number }[]) {
+  return new Map(cells.map((cell) => [cellKey(cell.boqItemId, cell.periodId), cell.plannedPct]));
+}
+
+/**
+ * The baseline S-curve.
+ *
+ * A cell holds the share of *its own item* planned for that period, so the
+ * project-level figure for a period is Σ weight × cell / 100. The cumulative of
+ * that is the curve the actual line is judged against.
+ */
+export function computePlannedCurve(
+  rows: { leaf: LeafLike }[],
+  periods: PeriodLike[],
+  cells: Map<string, number>,
+): { perPeriod: number[]; cumulative: number[] } {
+  const perPeriod = periods.map((period) =>
+    rows.reduce(
+      (total, row) => total + (row.leaf.weight * (cells.get(cellKey(row.leaf.id, period.id)) ?? 0)) / 100,
+      0,
+    ),
+  );
+
+  let running = 0;
+  const cumulative = perPeriod.map((value) => (running += value));
+
+  return { perPeriod, cumulative };
+}
+
+/**
+ * The actual S-curve.
+ *
+ * Four rules, each of which exists because of a way the naive version lies:
+ *
+ * 1. **A period with no entry carries the previous reading forward.** Readings
+ *    are cumulative, so a line nobody updated this week is still as complete as
+ *    it was last week — not back at zero.
+ *
+ * 2. **A cleared cell is not a reading of zero.** Wiping a mistaken entry
+ *    leaves a row behind with both cumulative columns null; it must behave like
+ *    no entry at all. An explicit zero, on the other hand, is somebody saying
+ *    the work has not started, and *does* reset the line.
+ *
+ * 3. **Item readings win over an imported project snapshot in the same
+ *    period.** A snapshot can draw the project curve, but cannot honestly be
+ *    attributed back to individual BoQ lines.
+ *
+ * 4. **The line stops at the last real reading or snapshot**, rather than
+ *    running flat to the data date. Trailing nulls leave a gap the chart does
+ *    not draw, so an unreported period reads as unknown instead of as "no
+ *    progress made".
+ */
+export function computeActualCurve(
+  rows: { leaf: LeafLike }[],
+  periods: PeriodLike[],
+  entries: EntryLike[],
+  dataDate: string | null,
+  snapshots: ActualSnapshotLike[] = [],
+): { cumulative: (number | null)[]; sources: ActualCurveSource[] } {
+  const readings = new Map<string, number>();
+  const periodsWithItemReadings = new Set<string>();
+
+  for (const entry of entries) {
+    if (entry.cumulativePercent === null && entry.cumulativeQuantity === null) continue;
+    readings.set(cellKey(entry.boqItemId, entry.periodId), entry.pctComplete);
+    periodsWithItemReadings.add(entry.periodId);
+  }
+
+  const snapshotsByPeriod = new Map(
+    snapshots.map((snapshot) => [snapshot.periodId, snapshot.cumulativePercent]),
+  );
+
+  const lastRead = periods
+    .filter(
+      (period) =>
+        periodsWithItemReadings.has(period.id) || snapshotsByPeriod.has(period.id),
+    )
+    .reduce((latest, period) => (period.endDate > latest ? period.endDate : latest), "");
+
+  // Running completion per leaf — this is what "carries forward".
+  const running = new Map<string, number>();
+  const cumulative: (number | null)[] = [];
+  const sources: ActualCurveSource[] = [];
+  let carriedActual: number | null = null;
+  let carriedSource: ActualCurveSource = null;
+
+  for (const period of periods) {
+    for (const row of rows) {
+      const reading = readings.get(cellKey(row.leaf.id, period.id));
+      if (reading !== undefined) running.set(row.leaf.id, reading);
+    }
+
+    if (periodsWithItemReadings.has(period.id)) {
+      carriedActual = rows.reduce(
+        (total, row) => total + (row.leaf.weight * (running.get(row.leaf.id) ?? 0)) / 100,
+        0,
+      );
+      carriedSource = "itemized";
+    } else {
+      const snapshot = snapshotsByPeriod.get(period.id);
+      if (snapshot !== undefined) {
+        carriedActual = snapshot;
+        carriedSource = "imported";
+      }
+    }
+
+    if (!lastRead || period.endDate > lastRead || (dataDate && period.endDate > dataDate)) {
+      cumulative.push(null);
+      sources.push(null);
+      continue;
+    }
+
+    // Preserve the established pre-first-reading zero while keeping periods
+    // after the last source unknown.
+    cumulative.push(carriedActual ?? 0);
+    sources.push(carriedActual === null ? null : carriedSource);
+  }
+
+  return { cumulative, sources };
+}
+
+/**
+ * One row of the plan-versus-actual summary — the six figures a contractor's
+ * S-curve sheet carries under its grid, per period:
+ *
+ *   BOBOT RENCANA MINGGUAN    plannedPeriod
+ *   BOBOT AKTUAL MINGGUAN     actualPeriod
+ *   BOBOT RENCANA KUMULATIF   plannedCumulative
+ *   BOBOT AKTUAL KUMULATIF    actualCumulative
+ *   DEVIASI MINGGUAN          deviationPeriod
+ *   DEVIASI KUMULATIF         deviationCumulative
+ */
+export type PeriodSummary<P> = {
+  period: P;
+  plannedPeriod: number;
+  plannedCumulative: number;
+  /** Null where nothing has been reported — never zero. See the note below. */
+  actualPeriod: number | null;
+  actualCumulative: number | null;
+  deviationPeriod: number | null;
+  deviationCumulative: number | null;
+  /** Whether this actual can be attributed to BoQ lines. */
+  actualSource: ActualCurveSource;
+  /** The period the data date falls inside. False everywhere when there is no data date. */
+  isCurrent: boolean;
+};
+
+/**
+ * The summary table and the S-curve, from one pass over the same inputs.
+ *
+ * Composed from computePlannedCurve and computeActualCurve rather than
+ * recomputing anything: the table sits directly beneath the chart, and two
+ * implementations of "how far along are we" would eventually disagree in front
+ * of the person who has to sign the number.
+ *
+ * The per-period actual is a *delta of the cumulative*, because that is the
+ * only thing the readings can honestly produce — they are recorded cumulative
+ * to date. Where either end of the delta is unknown the result is null, not
+ * zero: an unreported fortnight is not a fortnight of no work, and rendering it
+ * as 0.0 would put a visible dip in the curve that nobody's site actually had.
+ *
+ * (In practice the nulls from computeActualCurve are always a trailing run —
+ * it fills every period up to the last reading and stops — so the delta never
+ * needs to bridge a hole. The check is still written to handle one, because a
+ * change to the carry-forward rules should not silently start inventing
+ * increments here.)
+ */
+export function buildPeriodSummary<P extends PeriodLike & { startDate: string }>(
+  rows: { leaf: LeafLike }[],
+  periods: P[],
+  cells: Map<string, number>,
+  entries: EntryLike[],
+  dataDate: string | null,
+  snapshots: ActualSnapshotLike[] = [],
+): PeriodSummary<P>[] {
+  const planned = computePlannedCurve(rows, periods, cells);
+  const actual = computeActualCurve(rows, periods, entries, dataDate, snapshots);
+
+  return periods.map((period, index) => {
+    const actualCumulative = actual.cumulative[index] ?? null;
+    const previousCumulative = index === 0 ? 0 : (actual.cumulative[index - 1] ?? null);
+
+    const actualPeriod =
+      actualCumulative === null || previousCumulative === null
+        ? null
+        : actualCumulative - previousCumulative;
+
+    const plannedPeriod = planned.perPeriod[index] ?? 0;
+    const plannedCumulative = planned.cumulative[index] ?? 0;
+
+    return {
+      period,
+      plannedPeriod,
+      plannedCumulative,
+      actualPeriod,
+      actualCumulative,
+      deviationPeriod: actualPeriod === null ? null : actualPeriod - plannedPeriod,
+      deviationCumulative:
+        actualCumulative === null ? null : actualCumulative - plannedCumulative,
+      actualSource: actual.sources[index] ?? null,
+      isCurrent:
+        dataDate !== null && period.startDate <= dataDate && dataDate <= period.endDate,
+    };
+  });
+}
+
+/**
+ * The headline figures, anchored to the last period that has an actual reading.
+ *
+ * Reading planned at a later period than actual is the single easiest way to
+ * make a healthy project look doomed, so both are taken from the same index.
+ */
+export function latestPosition(
+  actual: (number | null)[],
+  planned: number[],
+): { index: number; actual: number; planned: number; deviation: number } {
+  const index = actual.reduce<number>((last, value, i) => (value !== null ? i : last), -1);
+  if (index < 0) return { index, actual: 0, planned: 0, deviation: 0 };
+
+  const actualValue = actual[index] ?? 0;
+  const plannedValue = planned[index] ?? 0;
+
+  return {
+    index,
+    actual: actualValue,
+    planned: plannedValue,
+    deviation: actualValue - plannedValue,
+  };
+}
+
+/**
+ * What one line contributes to the project's position at the data date.
+ *
+ * All three figures are in *project* percentage points, not percentages of the
+ * line — so they sum to the headline numbers and can be read against each
+ * other. A line weighing 16% of the contract that is half done contributes 8
+ * points; if the plan wanted it finished, it is 8 points behind, and that is
+ * the number worth arguing about.
+ */
+export type DelayContributor<T> = {
+  leaf: T;
+  section: string;
+  /** The line's share of the contract, 0-100. */
+  weight: number;
+  /** Weighted points the plan expected by the data date. */
+  plannedContribution: number;
+  /** Weighted points actually achieved. Null where the line was never reported. */
+  actualContribution: number | null;
+  /** actual − planned, in project points. Negative is behind. */
+  variance: number | null;
+  /** This line's share of the project's total shortfall, 0-100. Null unless behind. */
+  shareOfDelay: number | null;
+  /** Index of the last period holding a reading for this line — reporting freshness. */
+  lastReadingIndex: number | null;
+};
+
+/**
+ * Ranks the lines driving a project's position, worst first.
+ *
+ * Measured at the data date and nowhere else, for the reason `latestPosition`
+ * exists: comparing an actual that stops at week 6 against a plan that runs to
+ * week 20 makes every line look catastrophic. Both sides here are summed over
+ * exactly the periods that end on or before the data date.
+ *
+ * `shareOfDelay` is a share of the *shortfall*, not of the project. Lines that
+ * are ahead do not offset it — netting them off would let a fortnight gained on
+ * cheap fitout hide a month lost on the frame, which is the specific lie this
+ * table exists to prevent. A line that has never been reported has a null
+ * variance rather than a variance equal to its whole plan: unknown and behind
+ * are different, and only the reporting-freshness column can tell you which.
+ */
+export function delayContributors<T extends BoqItemLike>(
+  rows: ScheduleRow<T>[],
+  periods: (PeriodLike & { periodIndex: number })[],
+  cells: Map<string, number>,
+  entries: EntryLike[],
+  dataDate: string | null,
+): DelayContributor<T>[] {
+  const inScope = dataDate
+    ? periods.filter((period) => period.endDate <= dataDate)
+    : ([] as (PeriodLike & { periodIndex: number })[]);
+
+  // Latest reading per leaf up to the data date, and which period it came from.
+  const latest = new Map<string, { pct: number; periodIndex: number }>();
+  const byPeriod = new Map(periods.map((period) => [period.id, period]));
+
+  for (const entry of entries) {
+    if (entry.cumulativePercent === null && entry.cumulativeQuantity === null) continue;
+    const period = byPeriod.get(entry.periodId);
+    if (!period) continue;
+    if (dataDate && period.endDate > dataDate) continue;
+
+    const current = latest.get(entry.boqItemId);
+    if (!current || period.periodIndex > current.periodIndex) {
+      latest.set(entry.boqItemId, { pct: entry.pctComplete, periodIndex: period.periodIndex });
+    }
+  }
+
+  const contributors = rows.map(({ leaf, section }) => {
+    const plannedPct = inScope.reduce(
+      (total, period) => total + (cells.get(cellKey(leaf.id, period.id)) ?? 0),
+      0,
+    );
+    const plannedContribution = (leaf.weight * plannedPct) / 100;
+
+    const reading = latest.get(leaf.id);
+    const actualContribution = reading ? (leaf.weight * reading.pct) / 100 : null;
+
+    return {
+      leaf,
+      section,
+      weight: leaf.weight,
+      plannedContribution,
+      actualContribution,
+      variance: actualContribution === null ? null : actualContribution - plannedContribution,
+      shareOfDelay: null as number | null,
+      lastReadingIndex: reading?.periodIndex ?? null,
+    };
+  });
+
+  const shortfall = contributors.reduce(
+    (total, row) => total + (row.variance !== null && row.variance < 0 ? -row.variance : 0),
+    0,
+  );
+
+  for (const row of contributors) {
+    row.shareOfDelay =
+      shortfall > 0 && row.variance !== null && row.variance < 0
+        ? (-row.variance / shortfall) * 100
+        : null;
+  }
+
+  return contributors.sort((a, b) => {
+    // Behind first, worst at the top; then unreported lines, which are the
+    // other thing a manager needs to chase; then everything else.
+    const rank = (row: (typeof contributors)[number]) =>
+      row.variance !== null && row.variance < 0 ? 0 : row.variance === null ? 1 : 2;
+    return rank(a) - rank(b) || (a.variance ?? 0) - (b.variance ?? 0) || b.weight - a.weight;
+  });
+}
+
+/** Sum of a section's line values — or its own, when it has no lines. */
+export function sectionAmount<T extends BoqItemLike & { value: number | null }>(
+  section: Section<T>,
+): number {
+  if (section.leaves.length === 0) return section.header.value ?? 0;
+  return section.leaves.reduce((total, leaf) => total + (leaf.value ?? 0), 0);
+}
+
+/** Same rollup for weight. */
+export function sectionWeight<T extends BoqItemLike>(section: Section<T>): number {
+  if (section.leaves.length === 0) return section.header.weight;
+  return section.leaves.reduce((total, leaf) => total + leaf.weight, 0);
+}
+
+/** Total live leaf weight — what must reach 100 before a BoQ can be baselined. */
+export function totalLeafWeight<T extends BoqItemLike>(items: T[]): number {
+  return scheduleRows(items).reduce((total, row) => total + row.leaf.weight, 0);
+}

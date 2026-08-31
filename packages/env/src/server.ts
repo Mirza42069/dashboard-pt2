@@ -21,6 +21,8 @@ const runtimeEnv = {
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
+    // The web runtime does not need migration credentials, so deployments may omit it.
+    DIRECT_URL: z.string().min(1).optional(),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
