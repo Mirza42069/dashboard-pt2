@@ -10,11 +10,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import * as Resizable from '@DashboardPT2/ui/components/resizable';
-	import { Button } from '@DashboardPT2/ui/components/button';
-	import { PanelRight, Sparkles } from '@DashboardPT2/ui/components/icons';
-	import * as Tooltip from '@DashboardPT2/ui/components/tooltip';
 
-	import { getT } from '../../i18n/context.svelte';
 	import {
 		clampAgentPanelSize,
 		MAX_AGENT_PANEL_SIZE,
@@ -26,7 +22,6 @@
 	import type { TextScale } from '../text-scale';
 	import AgentPanel from './agent-panel/agent-panel.svelte';
 	import AppSidebar from './app-sidebar.svelte';
-	import CommandPalette from './command-palette.svelte';
 	import Header from './header.svelte';
 	import SkipLink from './skip-link.svelte';
 
@@ -43,8 +38,6 @@
 		initialAgentPanel: AgentPanelState;
 		children: Snippet;
 	} = $props();
-
-	const t = getT();
 
 	// svelte-ignore state_referenced_locally
 	let collapsed = $state(initialCollapsed);
@@ -75,17 +68,17 @@
 	}
 </script>
 
-<div data-app-shell class="flex h-svh overflow-hidden bg-surface-shell">
+<div data-app-shell class="flex h-svh overflow-hidden bg-black">
 	<SkipLink />
-	<AppSidebar {collapsed} />
+	<AppSidebar {collapsed} onToggle={toggleSidebar} />
 
-	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-background">
+	<div
+		class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background md:my-1.5 md:mr-1.5 md:rounded-[1.5rem] md:ring-1 md:ring-white/10"
+	>
 		<Header
 			{user}
-			{collapsed}
 			{initialTextScale}
 			agentPanelCollapsed={panel.collapsed}
-			onToggleSidebar={toggleSidebar}
 			onToggleAgentPanel={toggleAgentPanel}
 		/>
 
@@ -124,36 +117,11 @@
 		</Resizable.PaneGroup>
 	</div>
 
-	{#if panel.collapsed}
-		<!--
-			Collapsed, the panel leaves the pane group entirely rather than shrinking
-			to a zero-width pane. A collapsed paneforge pane still owns a resize
-			handle, so the rail would stay draggable while showing nothing — this way
-			the only way back is the button, which is what a collapsed rail should be.
-		-->
-		<aside
-			class="hidden w-10 shrink-0 flex-col items-center gap-1 border-l border-border bg-surface-panel py-2 md:flex"
-		>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					{#snippet child({ props })}
-						<Button
-							{...props}
-							variant="ghost"
-							size="icon-sm"
-							onclick={toggleAgentPanel}
-							aria-label={t.agentPanel.expand}
-						>
-							<Sparkles class="text-brand" />
-						</Button>
-					{/snippet}
-				</Tooltip.Trigger>
-				<Tooltip.Content side="left">{t.agentPanel.expand}</Tooltip.Content>
-			</Tooltip.Root>
-			<span class="mt-1 h-px w-4 bg-border"></span>
-			<PanelRight class="mt-1 size-3.5 text-muted-foreground/60" />
-		</aside>
-	{/if}
-
-	<CommandPalette />
+	<!--
+		Collapsed, the panel leaves the pane group entirely rather than shrinking to
+		a zero-width pane: a collapsed paneforge pane still owns a resize handle, so
+		the rail would stay draggable while showing nothing. It leaves no stub
+		behind either — a square-cornered strip outside the rounded card only broke
+		the card's edge, and the header's own toggle is already the way back in.
+	-->
 </div>
