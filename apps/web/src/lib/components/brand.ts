@@ -5,4 +5,4 @@ export const BRAND_NAME = "Tickmark";
  *
  * Public by design: it is rendered as a mailto link.
  */
-export const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL ?? "hyperferno@gmail.com";
+export const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL ?? "contact@example.com";
