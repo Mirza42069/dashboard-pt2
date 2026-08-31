@@ -127,6 +127,7 @@
 					class="h-8 text-muted-foreground hover:text-foreground"
 					onclick={() => fileInput?.click()}
 					aria-label={t.chat.attach}
+					title={t.chat.attachNote}
 				>
 					<Paperclip />
 					{#if !compact}<span class="hidden sm:inline">{t.chat.attach}</span>{/if}
@@ -144,7 +145,4 @@
 			</Button>
 		</div>
 	</div>
-	{#if !compact}
-		<p class="px-2 text-caption text-muted-foreground">{t.chat.attachNote}</p>
-	{/if}
 </div>

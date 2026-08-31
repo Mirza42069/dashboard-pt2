@@ -22,7 +22,8 @@
 	<Sheet.Content side="left" class="w-64">
 		<Sheet.Header>
 			<Sheet.Title><BrandMark size="lg" /></Sheet.Title>
-			<Sheet.Description>{t.auth.tagline}</Sheet.Description>
+			<!-- Sheet requires a description; the nav does not need to show one. -->
+			<Sheet.Description class="sr-only">{t.auth.tagline}</Sheet.Description>
 		</Sheet.Header>
 		<div class="flex min-h-0 flex-1 flex-col px-3 pb-4">
 			<AppNav onNavigate={() => (open = false)} />

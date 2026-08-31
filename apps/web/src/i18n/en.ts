@@ -192,7 +192,6 @@ export const en = {
     newRun: "New run",
     pastRuns: "Past runs",
     noRuns: "Nothing run yet",
-    intro: "Ask about a workbook and the agent shows its working, not just an answer.",
   },
   palette: {
     title: "Command palette",
@@ -278,13 +277,11 @@ export const en = {
     formulaHint: "Select a cell to inspect its value",
     emptyCell: "Empty cell",
     selectCell: "Select a cell",
-    selectCellHint: "The agent follows your selection and explains the DJP rule behind it.",
     readingRule: "Reading the rule…",
     suggestedFix: "Suggested correction",
     readOnlyNote: "Suggestions never change your workbook. Edit the cell to apply one.",
     noIssueOnCell: "No validation issue is attached to this cell.",
     issuesOnPage: "Issues on this page",
-    validateHint: "Validate to check the current version.",
     agentContext: "Context: {context}",
     noImport: "No import yet",
     noImportHint: "Bring your Excel file over to start working.",
@@ -746,7 +743,6 @@ export const en = {
 
   activity: {
     title: "Recent activity",
-    description: "Every recorded change, newest first.",
     loading: "Loading recent activity",
     empty: "Nothing recorded yet",
     unknownActor: "A removed account",

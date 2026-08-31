@@ -144,7 +144,6 @@
 	<div bind:this={scroller} class="min-h-0 flex-1 overflow-y-auto px-3 py-4">
 		{#if !activeId}
 			<div class="space-y-3">
-				<p class="text-xs leading-5 text-muted-foreground">{t.agentPanel.intro}</p>
 				<div class="flex flex-col gap-1.5">
 					{#each suggestions as suggestion (suggestion)}
 						<button

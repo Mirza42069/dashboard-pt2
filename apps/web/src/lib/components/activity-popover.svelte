@@ -66,7 +66,6 @@
 	>
 		<div class="border-b px-4 py-3">
 			<p class="text-sm font-semibold text-foreground">{t.activity.title}</p>
-			<p class="text-caption text-muted-foreground">{t.activity.description}</p>
 		</div>
 		<div class="max-h-[min(28rem,calc(100svh-5rem))] overflow-y-auto p-2">
 			{#if query.isPending}

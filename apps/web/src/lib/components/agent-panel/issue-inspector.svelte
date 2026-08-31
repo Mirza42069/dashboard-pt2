@@ -3,6 +3,7 @@
 	import {
 		CircleCheck,
 		Loader2,
+		Lock,
 		MousePointerClick,
 		Sparkles,
 		TriangleAlert
@@ -61,9 +62,6 @@
 			<div class="rounded-md border border-dashed border-border p-4 text-center">
 				<MousePointerClick class="mx-auto size-4 text-muted-foreground" />
 				<p class="mt-2 text-xs font-medium">{t.workbook.selectCell}</p>
-				<p class="mt-1 text-caption leading-4 text-muted-foreground">
-					{t.workbook.selectCellHint}
-				</p>
 			</div>
 		{/if}
 
@@ -89,12 +87,25 @@
 						</div>
 					</div>
 					<div class="border-l-2 border-brand bg-brand/5 px-3 py-2">
-						<p class="text-caption font-semibold tracking-wide text-brand uppercase">
+						<p class="flex items-center gap-1.5 text-caption font-semibold tracking-wide text-brand uppercase">
 							{t.workbook.suggestedFix}
+							<!--
+								A suggestion is read-only — it never touches the workbook. That
+								is a property of the thing, not a lesson, so it rides on the
+								heading as a lock and a tooltip instead of a standing sentence
+								repeated under every explanation.
+							-->
+							<span
+								class="inline-flex"
+								role="img"
+								title={t.workbook.readOnlyNote}
+								aria-label={t.workbook.readOnlyNote}
+							>
+								<Lock class="size-3 text-brand/60" />
+							</span>
 						</p>
 						<p class="mt-1 text-xs leading-5">{explanation.data.suggestion}</p>
 					</div>
-					<p class="text-caption leading-4 text-muted-foreground">{t.workbook.readOnlyNote}</p>
 				</div>
 			{/if}
 		{:else if selected}
@@ -139,8 +150,6 @@
 						</li>
 					{/each}
 				</ul>
-			{:else}
-				<p class="mt-2 text-caption text-muted-foreground">{t.workbook.validateHint}</p>
 			{/if}
 		</div>
 	</div>

@@ -9,7 +9,6 @@
 	import type { TextScale } from '../text-scale';
 	import ActivityPopover from './activity-popover.svelte';
 	import type { ShellUser } from './app-shell.svelte';
-	import CompanySwitcher from './company-switcher.svelte';
 	import MobileNav from './mobile-nav.svelte';
 	import UserMenu from './user-menu.svelte';
 
@@ -55,7 +54,6 @@
 	</div>
 
 	<div class="flex shrink-0 items-center gap-1">
-		<div class="hidden lg:flex"><CompanySwitcher /></div>
 		<ActivityPopover />
 		<UserMenu {user} {initialTextScale} />
 
