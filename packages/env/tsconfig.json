@@ -1,0 +1,3 @@
+{
+  "extends": "@DashboardPT2/config/tsconfig.base.json"
+}

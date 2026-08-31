@@ -1,0 +1,28 @@
+{
+  "name": "@DashboardPT2/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@DashboardPT2/auth": "workspace:*",
+    "@DashboardPT2/db": "workspace:*",
+    "@DashboardPT2/env": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@DashboardPT2/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
