@@ -37,7 +37,7 @@ export async function requireSession(
 
   if (!account) {
     const next = `${event.url.pathname}${event.url.search}`;
-    redirect(302, `/login?next=${encodeURIComponent(next)}`);
+    redirect(302, `/?next=${encodeURIComponent(next)}`);
   }
 
   const user = account;

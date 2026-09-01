@@ -13,7 +13,7 @@
 
 	async function signOut() {
 		await authClient.signOut({
-			fetchOptions: { onSuccess: () => void goto('/login', { invalidateAll: true }) }
+			fetchOptions: { onSuccess: () => void goto('/', { invalidateAll: true }) }
 		});
 	}
 </script>

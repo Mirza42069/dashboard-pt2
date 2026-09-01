@@ -7,21 +7,27 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.982 0.004 250);
-  --foreground: oklch(0.205 0.025 258);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0.025 258);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0.025 258);
-  --primary: #f59e0b;
-  --primary-foreground: #241500;
-  --secondary: oklch(0.958 0.008 255);
-  --secondary-foreground: oklch(0.245 0.035 258);
-  --muted: oklch(0.958 0.008 255);
-  --muted-foreground: oklch(0.515 0.025 257);
-  --accent: oklch(0.948 0.018 252);
-  --accent-foreground: oklch(0.245 0.035 258);
-  --destructive: oklch(0.5770 0.2450 27.3250);
+  --background: #ffffff;
+  --foreground: #22262a;
+  --card: #ffffff;
+  --card-foreground: #22262a;
+  --popover: #ffffff;
+  --popover-foreground: #22262a;
+  --primary: #e11421;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f5f6;
+  --secondary-foreground: #2e3338;
+  --muted: #f7f7f8;
+  --muted-foreground: #5c6670;
+  --accent: #fdeced;
+  --accent-foreground: #8d0c15;
+  /*
+   * A softer red than --primary on purpose. The two now sit in the same hue
+   * family, so an error state next to a primary button has to be told apart by
+   * something other than "is it red" — this one is lighter and less saturated,
+   * and it never appears as a large filled surface the way --primary does.
+   */
+  --destructive: #ef4343;
   /*
    * The positive counterpart to --destructive. Added because two call sites had
    * invented their own: a raw text-emerald-600 in baseline-tab, and
@@ -34,14 +40,25 @@
   /* Semantic caution state; chart tokens remain reserved for data magnitude. */
   --warning: oklch(0.5600 0.1200 68);
   --warning-foreground: oklch(1 0 0);
-  /* Warm amber from mirport.dev's light palette. */
-  --brand: #f59e0b;
-  --brand-foreground: #241500;
-  --brand-hover: #d97706;
+  /*
+   * The product's red, and the same value as --primary.
+   *
+   * They are kept as separate names rather than collapsed into one: --primary
+   * is what a shadcn component reaches for, --brand is what the product reaches
+   * for when it means "this is Tickmark" — the mark, the eyebrow, the agent
+   * rail, the ring on a flagged cell. Holding them apart is what lets a future
+   * theme move button colour without repainting the logo, which is exactly the
+   * move that happened here in reverse: --brand was amber while --primary was
+   * amber too, and unifying on red was a one-line change to this block rather
+   * than an edit to sixty call sites.
+   */
+  --brand: #e11421;
+  --brand-foreground: #ffffff;
+  --brand-hover: #b3101a;
 
-  --border: oklch(0.9000 0.0120 255);
-  --input: oklch(0.8750 0.0140 255);
-  --ring: #f59e0b;
+  --border: #e3e6e8;
+  --input: #e3e6e8;
+  --ring: #e11421;
   /*
    * Sequential ramp, ordered by *prominence against this theme's page*: step 1
    * has the most contrast, step 5 the least. Not by raw lightness — that is
@@ -83,7 +100,7 @@
   --progress-3: oklch(0.8494849 0.1315476 75.70558);  /* #ffc163 */
   --progress-4: oklch(0.9706823 0.1787478 109.65321); /* #feff5c */
   --progress-5: oklch(0.9242794 0.2229197 126.32289); /* #c0ff33 */
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
   /*
    * Working surfaces — the greys the app's chrome is built from.
@@ -95,21 +112,25 @@
    * the workbook page had already drifted to a second green (#166534) that
    * matched nothing else in the product.
    *
-   * Warm on purpose. They sit a hair to the yellow side of neutral (hue ~106)
-   * so a dense grid of figures reads as paper rather than as screen, and so
-   * they agree with the amber --brand instead of fighting it.
+   * Neutral, not warm. These used to sit a hair to the yellow side of neutral
+   * (hue ~106) so that they would agree with an amber --brand instead of
+   * fighting it. --brand is red now, and a yellow-tinted grey under a red
+   * accent reads as a stain rather than as paper — the warmth was in service of
+   * the amber, so it goes with the amber. They are re-derived off the same grey
+   * ladder as --secondary / --muted / --border, which keeps the app's chrome
+   * and its components in one family.
    *
    * Ordered darkest to lightest: shell is the gutter behind everything, canvas
    * the page under a workspace, panel the agent rail, grid-header the frozen
    * header and row gutter, grid-alt the zebra stripe.
    */
-  --surface-shell: oklch(0.9326 0.0067 106.53);
-  --surface-canvas: oklch(0.9693 0.0040 106.47);
-  --surface-panel: oklch(0.9850 0.0041 91.45);
-  --surface-grid-header: oklch(0.9630 0.0053 106.50);
-  --surface-grid-alt: oklch(0.9845 0.0026 106.45);
-  /* Near-black chip behind the agent mark. Was #171713. */
-  --ink-strong: oklch(0.2031 0.0077 107.07);
+  --surface-shell: #eceef0;
+  --surface-canvas: #f4f5f6;
+  --surface-panel: #fafafb;
+  --surface-grid-header: #f2f3f4;
+  --surface-grid-alt: #fafafa;
+  /* Near-black chip behind the agent mark. Tracks --foreground. */
+  --ink-strong: #22262a;
 
   /*
    * Grid density.
@@ -124,85 +145,93 @@
   --row-h: 2rem;
   --row-h-compact: 1.75rem;
   --grid-cell-px: 0.5rem;
-  --sidebar: oklch(0.965 0.009 252);
-  --sidebar-foreground: oklch(0.205 0.025 258);
-  --sidebar-primary: oklch(0.245 0.035 258);
-  --sidebar-primary-foreground: oklch(0.9851 0 0);
-  --sidebar-accent: oklch(0.940 0.018 252);
-  --sidebar-accent-foreground: oklch(0.245 0.035 258);
-  --sidebar-border: oklch(0.9000 0.0120 255);
-  --sidebar-ring: oklch(0.5700 0.1700 258);
-  --destructive-foreground: oklch(1 0 0);
-  --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --sidebar: #f9fafa;
+  --sidebar-foreground: #2e3338;
+  --sidebar-primary: #e11421;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fde3e5;
+  --sidebar-accent-foreground: #8d0c15;
+  --sidebar-border: #e9ebed;
+  --sidebar-ring: #e11421;
+  --destructive-foreground: #ffffff;
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --shadow-color: oklch(0 0 0);
-  --shadow-opacity: 0.1;
-  --shadow-blur: 3px;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-opacity: 0.05;
+  --shadow-blur: 4px;
   --shadow-spread: 0px;
-  --shadow-offset-x: 0;
+  --shadow-offset-x: 0px;
   --shadow-offset-y: 1px;
-  --letter-spacing: 0em;
+  --letter-spacing: -0.01em;
   --spacing: 0.25rem;
   /*
-   * Elevation ramp. Every step used to share the same `0 1px 3px` base, so the
-   * eight names spanned almost no actual range — and --shadow-2xl was a single
-   * 3px blur, making it *smaller* than --shadow-xl. Anything reaching for the
-   * top of the scale got less depth than the step below it.
+   * Elevation ramp, retuned to the flatter theme this palette belongs to.
    *
-   * Now each step is a contact shadow (tight, holds the object to the surface)
-   * plus a diffuse shadow that grows with elevation, both in oklch to match the
-   * rest of this file. Opacity climbs with height because a raised object casts
-   * a darker shadow, not merely a wider one.
+   * Much lighter than the ramp it replaces: a 4px ambient blur at 3–5% opacity
+   * throughout, with only the second, directional shadow growing as an object
+   * lifts. That is the whole difference between the steps here — the depth cue
+   * is offset, not darkness — which is what keeps a card on a white page from
+   * looking like it is floating a foot above it.
+   *
+   * The one departure from the supplied theme is --shadow-2xl. As given it was
+   * a single `0 1px 4px` at 13%, i.e. *smaller* than --shadow-xl's 8px offset,
+   * so anything reaching for the top of the scale got less depth than the step
+   * below it. Exactly the inversion this ramp was rewritten once before to fix.
+   * It keeps the supplied 13% opacity and takes the largest geometry, so the
+   * eight names stay monotonic.
    */
-  --shadow-2xs: 0 1px 2px -1px oklch(0.20 0.03 258 / 0.05);
-  --shadow-xs: 0 1px 2px -1px oklch(0.20 0.03 258 / 0.07);
-  --shadow-sm: 0 1px 2px -1px oklch(0.20 0.03 258 / 0.08), 0 3px 6px -3px oklch(0.20 0.03 258 / 0.06);
-  --shadow: 0 1px 2px -1px oklch(0.20 0.03 258 / 0.08), 0 4px 10px -4px oklch(0.20 0.03 258 / 0.08);
-  --shadow-md: 0 2px 4px -2px oklch(0.20 0.03 258 / 0.09), 0 8px 18px -6px oklch(0.20 0.03 258 / 0.10);
-  --shadow-lg: 0 3px 6px -3px oklch(0.20 0.03 258 / 0.10), 0 16px 28px -8px oklch(0.20 0.03 258 / 0.12);
-  --shadow-xl: 0 4px 8px -4px oklch(0.20 0.03 258 / 0.11), 0 24px 40px -10px oklch(0.20 0.03 258 / 0.14);
-  --shadow-2xl: 0 6px 12px -6px oklch(0.20 0.03 258 / 0.12), 0 32px 56px -14px oklch(0.20 0.03 258 / 0.18);
-  --tracking-normal: 0em;
+  --shadow-2xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-sm: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow-md: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.05);
+  --shadow-lg: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 4px 6px -1px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.05);
+  --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13), 0px 16px 24px -4px hsl(0 0% 0% / 0.13);
+  --tracking-normal: -0.01em;
 }
 
 .dark {
-  --background: oklch(0.2292 0.0304 259.0329);
-  --foreground: oklch(0.9392 0.0101 238.5151);
-  --card: oklch(0.2610 0.0307 254.7604);
-  --card-foreground: oklch(0.9392 0.0101 238.5151);
-  --popover: oklch(0.2897 0.0338 255.7937);
-  --popover-foreground: oklch(0.9392 0.0101 238.5151);
-  --primary: oklch(0.8993 0.0119 239.9205);
-  --primary-foreground: oklch(0.2494 0.0304 256.8623);
-  --secondary: oklch(0.3056 0.0334 255.7755);
-  --secondary-foreground: oklch(0.9392 0.0101 238.5151);
-  --muted: oklch(0.2947 0.0308 258.3315);
-  --muted-foreground: oklch(0.6604 0.0245 248.1982);
-  --accent: oklch(0.3438 0.0389 254.6348);
-  --accent-foreground: oklch(0.9392 0.0101 238.5151);
-  --destructive: oklch(0.7040 0.1910 22.2160);
+  --background: #090a0b;
+  --foreground: #fafafa;
+  --card: #101214;
+  --card-foreground: #fafafa;
+  --popover: #101214;
+  --popover-foreground: #fafafa;
+  --primary: #e11421;
+  --primary-foreground: #ffffff;
+  --secondary: #22262a;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1f22;
+  --muted-foreground: #9da6af;
+  --accent: #46060a;
+  --accent-foreground: #f7a1a7;
+  --destructive: #7c1d1d;
   --success: oklch(0.7600 0.1500 155);
   --success-foreground: oklch(0.2494 0.0304 256.8623);
   --warning: oklch(0.7800 0.1400 75);
-  --warning-foreground: oklch(0.2494 0.0304 256.8623);
-  /* Lifted well above the light theme's petrol: L 0.45 on a dark card is nearly
-     invisible, and this is used for icons that have to be seen.
+  --warning-foreground: oklch(0.2478 0 0);
+  /*
+   * The same red as :root, unlike every previous version of this block.
+   *
+   * It used to be lifted and desaturated for legibility, because the light
+   * brand was a petrol teal at L 0.45 that all but vanished on a dark card.
+   * A red at L ~0.55 does not have that problem: it clears 4.5:1 against this
+   * page as a graphic and reads clearly as the mark at icon size, so the mark
+   * is now byte-identical across both themes rather than merely "the same hue".
+   *
+   * White foreground, not near-black — the reverse of what the teal wanted.
+   * Red is dark enough at full chroma that white is the legible pairing on it
+   * in either theme, which is also why --primary-foreground is white above.
+   */
+  --brand: #e11421;
+  --brand-foreground: #ffffff;
+  --brand-hover: #f0343f;
 
-     Same hue as :root so the mark is recognisably one logo across themes; only
-     lightness and chroma move. Chroma drops as lightness climbs to stay inside
-     sRGB — 0.09 is comfortably under the ceiling at L 0.78 / h 198, so nothing
-     here is silently gamut-mapped to a colour nobody chose.
-
-     Near-black foreground, not white: at this lightness white is ~2.6:1 and the
-     near-black is past 9:1. See the note in :root. */
-  --brand: oklch(0.7800 0.0900 198);
-  --brand-foreground: oklch(0.2000 0.0250 198);
-  --brand-hover: oklch(0.8400 0.0750 198);
-
-  --border: oklch(0.3299 0.0322 257.6775);
-  --input: oklch(0.3205 0.0336 253.9373);
-  --ring: oklch(0.5805 0.0297 251.8232);
+  --border: #25292d;
+  --input: #25292d;
+  --ring: #e11421;
   /*
    * The dark ramp, under the same prominence rule as :root — step 1 has the
    * most contrast against this theme's page, step 5 the least.
@@ -239,62 +268,66 @@
    * reason the dark chart ramp is: the one-line revert that re-enables dark mode
    * must not land the product on a page where every grid header is transparent.
    *
-   * The warm hue does not survive the flip. On a dark ground a yellow-tinted
-   * grey reads as nicotine rather than as paper, so these follow the cool
-   * blue-grey the rest of this block already uses, and only the ordering is
-   * preserved: shell darkest, then canvas, panel, grid-header, grid-alt.
+   * Derived off this block's own near-black ladder, and only the ordering is
+   * carried over from :root: shell darkest, then canvas, panel, grid-alt, with
+   * grid-header the lightest step so a frozen header still separates from the
+   * rows under it.
    */
-  --surface-shell: oklch(0.1980 0.0270 259.0329);
-  --surface-canvas: oklch(0.2292 0.0304 259.0329);
-  --surface-panel: oklch(0.2452 0.0305 256.8649);
-  --surface-grid-header: oklch(0.2947 0.0308 258.3315);
-  --surface-grid-alt: oklch(0.2610 0.0307 254.7604);
-  --ink-strong: oklch(0.9392 0.0101 238.5151);
-  --sidebar: oklch(0.2452 0.0305 256.8649);
-  --sidebar-foreground: oklch(0.9392 0.0101 238.5151);
-  --sidebar-primary: oklch(0.4887 0.2427 263.9688);
-  --sidebar-primary-foreground: oklch(0.9851 0 0);
-  --sidebar-accent: oklch(0.3056 0.0334 255.7755);
-  --sidebar-accent-foreground: oklch(0.9392 0.0101 238.5151);
-  --sidebar-border: oklch(0.3053 0.0296 254.6806);
-  --sidebar-ring: oklch(0.5805 0.0297 251.8232);
-  --destructive-foreground: oklch(0.9850 0 0);
+  --surface-shell: #060708;
+  --surface-canvas: #090a0b;
+  --surface-panel: #101214;
+  --surface-grid-header: #1c1f22;
+  --surface-grid-alt: #121416;
+  --ink-strong: #fafafa;
+  --sidebar: #121416;
+  --sidebar-foreground: #e3e6e8;
+  --sidebar-primary: #e11421;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #46060a;
+  --sidebar-accent-foreground: #f9b9bd;
+  --sidebar-border: #202427;
+  --sidebar-ring: #e11421;
+  --destructive-foreground: #fafafa;
   /*
    * --radius and --font-sans are deliberately NOT redeclared here.
    *
    * This block used to override them to 0.375rem and a bare system stack, so
-   * corner radius changed and Public Sans was dropped the moment dark mode was
+   * corner radius changed and Inter was dropped the moment dark mode was
    * enabled — a theme is a palette, not a different product. Both now come from
    * :root for both themes.
    */
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --shadow-color: oklch(0 0 0);
-  --shadow-opacity: 0.1;
-  --shadow-blur: 3px;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-opacity: 0.4;
+  --shadow-blur: 8px;
   --shadow-spread: 0px;
-  --shadow-offset-x: 0;
-  --shadow-offset-y: 1px;
-  --letter-spacing: 0em;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 2px;
+  --letter-spacing: -0.01em;
   --spacing: 0.25rem;
   /*
-   * Same ramp shape as :root, roughly doubled in opacity. A black shadow on a
-   * dark surface has far less to work with than the same shadow on white, so
-   * matching the light values exactly — which is what this block used to do —
-   * reads as no elevation at all.
+   * Same ramp shape as :root — a fixed ambient blur plus a directional shadow
+   * that grows with elevation — at roughly eight times the opacity and twice
+   * the blur. A black shadow on a dark surface has far less to work with than
+   * the same shadow on white, so matching the light values reads as no
+   * elevation at all.
+   *
+   * --shadow-2xl takes the same correction as :root: as supplied it was a lone
+   * `0 2px 8px` at full opacity, i.e. a smaller geometry than --shadow-xl.
    */
-  --shadow-2xs: 0 1px 2px -1px oklch(0 0 0 / 0.16);
-  --shadow-xs: 0 1px 2px -1px oklch(0 0 0 / 0.20), 0 1px 1px -1px oklch(0 0 0 / 0.12);
-  --shadow-sm: 0 1px 2px -1px oklch(0 0 0 / 0.24), 0 2px 4px -2px oklch(0 0 0 / 0.16);
-  --shadow: 0 1px 2px -1px oklch(0 0 0 / 0.24), 0 3px 6px -2px oklch(0 0 0 / 0.20);
-  --shadow-md: 0 1px 2px -1px oklch(0 0 0 / 0.26), 0 6px 12px -3px oklch(0 0 0 / 0.26);
-  --shadow-lg: 0 1px 3px -1px oklch(0 0 0 / 0.28), 0 12px 20px -5px oklch(0 0 0 / 0.30);
-  --shadow-xl: 0 1px 3px -1px oklch(0 0 0 / 0.30), 0 20px 32px -8px oklch(0 0 0 / 0.36);
-  --shadow-2xl: 0 1px 3px -1px oklch(0 0 0 / 0.32), 0 32px 56px -12px oklch(0 0 0 / 0.48);
+  --shadow-2xs: 0px 2px 8px 0px hsl(0 0% 0% / 0.20);
+  --shadow-xs: 0px 2px 8px 0px hsl(0 0% 0% / 0.20);
+  --shadow-sm: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 1px 2px -1px hsl(0 0% 0% / 0.40);
+  --shadow: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 1px 2px -1px hsl(0 0% 0% / 0.40);
+  --shadow-md: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 2px 4px -1px hsl(0 0% 0% / 0.40);
+  --shadow-lg: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 4px 6px -1px hsl(0 0% 0% / 0.40);
+  --shadow-xl: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 8px 10px -1px hsl(0 0% 0% / 0.40);
+  --shadow-2xl: 0px 2px 8px 0px hsl(0 0% 0% / 0.60), 0px 16px 24px -4px hsl(0 0% 0% / 0.60);
 }
 
 @theme inline {
-  --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   /*
    * The caption/eyebrow step, named.
    *
@@ -346,7 +379,7 @@
   --radius-4xl: calc(var(--radius) + 16px);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);

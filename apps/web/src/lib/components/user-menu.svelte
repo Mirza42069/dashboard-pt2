@@ -45,7 +45,7 @@
 			fetchOptions: {
 				onSuccess: () => {
 					queryClient.clear();
-					void goto('/login', { invalidateAll: true });
+					void goto('/', { invalidateAll: true });
 				}
 			}
 		});
