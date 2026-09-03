@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MoreHorizontal as MoreHorizontalIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, MoreHorizontal as MoreHorizontalIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn, type WithElementRef, type WithoutChildren } from "@DashboardPT2/ui/lib/utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
 
@@ -17,6 +17,6 @@
 	class={cn("size-8 items-center justify-center [&_svg:not([class*='size-'])]:size-4 flex items-center justify-center", className)}
 	{...restProps}
 >
-	<MoreHorizontalIcon  />
+	<Icon icon={MoreHorizontalIcon} />
 	<span class="sr-only">More pages</span>
 </span>

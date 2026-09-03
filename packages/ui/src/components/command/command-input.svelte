@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Command as CommandPrimitive } from "bits-ui";
 	import * as InputGroup from "@DashboardPT2/ui/components/input-group/index.js";
-	import { Search as SearchIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, Search as SearchIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn } from "@DashboardPT2/ui/lib/utils.js";
 
 	let {
@@ -28,7 +28,7 @@
 			{/snippet}
 		</CommandPrimitive.Input>
 		<InputGroup.Addon>
-			<SearchIcon class="size-4 shrink-0 opacity-50" />
+			<Icon icon={SearchIcon} class="size-4 shrink-0 opacity-50" />
 		</InputGroup.Addon>
 	</InputGroup.Root>
 </div>

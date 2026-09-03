@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import { XIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, XIcon } from "@DashboardPT2/ui/components/icons";
 	import { Dialog as SheetPrimitive } from "bits-ui";
 	import { Button } from "@DashboardPT2/ui/components/button/index.js";
 	import { cn, type WithoutChildrenOrChild } from "@DashboardPT2/ui/lib/utils.js";
@@ -45,7 +45,7 @@
 			<SheetPrimitive.Close data-slot="sheet-close">
 				{#snippet child({ props })}
 					<Button variant="ghost" class="absolute top-3 right-3" size="icon-sm" {...props}>
-						<XIcon  />
+						<Icon icon={XIcon} />
 						<span class="sr-only">Close</span>
 					</Button>
 				{/snippet}

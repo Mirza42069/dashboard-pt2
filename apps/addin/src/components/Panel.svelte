@@ -2,8 +2,31 @@
 	import { Badge } from "@DashboardPT2/ui/components/badge";
 	import { Bubble } from "@DashboardPT2/ui/components/bubble";
 	import { Button } from "@DashboardPT2/ui/components/button";
-	import { CheckIcon, TriangleAlertIcon } from "@DashboardPT2/ui/components/icons";
-	import { Input } from "@DashboardPT2/ui/components/input";
+	import {
+		Empty,
+		EmptyContent,
+		EmptyDescription,
+		EmptyHeader,
+		EmptyMedia,
+		EmptyTitle,
+	} from "@DashboardPT2/ui/components/empty";
+	import {
+		ArrowUp,
+		Check,
+		ChevronRight,
+		FileSpreadsheet,
+		Icon,
+		RefreshCw,
+		Sparkles,
+		TriangleAlert,
+	} from "@DashboardPT2/ui/components/icons";
+	import {
+		InputGroup,
+		InputGroupAddon,
+		InputGroupText,
+		InputGroupTextarea,
+	} from "@DashboardPT2/ui/components/input-group";
+	import { Kbd } from "@DashboardPT2/ui/components/kbd";
 	import { Marker } from "@DashboardPT2/ui/components/marker";
 	import { Message } from "@DashboardPT2/ui/components/message";
 	import { MessageScroller } from "@DashboardPT2/ui/components/message-scroller";
@@ -89,6 +112,13 @@
 		}
 	}
 
+	/** Enter sends, Shift+Enter breaks the line — the composer is a textarea. */
+	function onComposerKeydown(event: KeyboardEvent) {
+		if (event.key !== "Enter" || event.shiftKey) return;
+		event.preventDefault();
+		void send(question);
+	}
+
 	async function applyIssue(issue: { ref: string; expected: string | null }) {
 		if (!issue.expected) return;
 		await applyFixes([{ ref: issue.ref, value: issue.expected }]);
@@ -103,30 +133,51 @@
 </script>
 
 <div class="flex h-full flex-col">
-	<header class="flex items-center gap-2 border-b px-3 py-2.5">
-		<span class="size-2 shrink-0 rounded-full bg-brand" aria-hidden="true"></span>
+	<!--
+		Two lines of chrome, and no more: who this is, then what it is looking at.
+		Refresh sits on the sheet line rather than in the header because that is
+		the thing it acts on — and as an icon it gives the thread back the ~40px
+		a labelled button was spending.
+	-->
+	<header class="flex h-11 shrink-0 items-center gap-2 border-b px-3">
+		<span
+			class="flex size-5 shrink-0 items-center justify-center rounded-md bg-brand text-brand-foreground"
+			aria-hidden="true"
+		>
+			<Icon icon={Check} class="size-3" />
+		</span>
 		<span class="text-sm font-semibold tracking-tight">{t("brand")}</span>
-		<Badge variant={isInExcel() ? "default" : "secondary"} class="text-[10px]">
+		<Badge variant={isInExcel() ? "default" : "secondary"} class="ml-auto text-caption">
 			{sheetBadge()}
 		</Badge>
 	</header>
 
-	<div class="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 text-xs">
-		<div class="min-w-0 flex-1">
-			{#if sheet}
-				<p class="truncate font-medium">{sheet.name}</p>
-				<p class="text-muted-foreground">
-					{t("sheet.rows", { rows: sheet.rows.length, cols: sheet.headers.length })}
-				</p>
-			{:else}
-				<p class="text-muted-foreground">{t("loading")}</p>
-			{/if}
-		</div>
-		<Button variant="ghost" size="xs" disabled={readingSheet} onclick={refreshSheet}>
+	<div
+		class="flex h-8 shrink-0 items-center gap-1.5 border-b bg-muted/30 px-3 text-caption text-muted-foreground"
+	>
+		<Icon icon={FileSpreadsheet} class="size-3 shrink-0" />
+		{#if sheet}
+			<p class="min-w-0 flex-1 truncate">
+				<span class="font-medium text-foreground">{sheet.name}</span>
+				· {t("sheet.rows", { rows: sheet.rows.length, cols: sheet.headers.length })}
+			</p>
+		{:else}
+			<p class="min-w-0 flex-1 truncate">{t("loading")}</p>
+		{/if}
+		<Button
+			variant="ghost"
+			size="icon-xs"
+			class="-mr-1 shrink-0"
+			disabled={readingSheet}
+			onclick={refreshSheet}
+			aria-label={t("sheet.refresh")}
+			title={readingSheet ? t("sheet.refreshing") : t("sheet.refresh")}
+		>
 			{#if readingSheet}
 				<Spinner class="size-3" />
+			{:else}
+				<Icon icon={RefreshCw} class="size-3" />
 			{/if}
-			{readingSheet ? t("sheet.refreshing") : t("sheet.refresh")}
 		</Button>
 	</div>
 
@@ -137,16 +188,28 @@
 		class="space-y-3 px-3 py-3"
 	>
 		{#if turns.length === 0}
-			<div class="space-y-2.5 pt-2">
-				<p class="text-xs leading-relaxed text-muted-foreground">{t("thread.empty")}</p>
-				<div class="flex flex-wrap gap-1.5">
+			<Empty class="gap-3 p-4">
+				<EmptyHeader>
+					<EmptyMedia variant="icon" class="mb-0 size-8 rounded-md">
+						<Icon icon={Sparkles} class="size-4 text-brand" />
+					</EmptyMedia>
+					<EmptyTitle>{t("thread.emptyTitle")}</EmptyTitle>
+					<EmptyDescription class="text-xs">{t("thread.empty")}</EmptyDescription>
+				</EmptyHeader>
+				<EmptyContent class="gap-1.5">
 					{#each suggestions as suggestion (suggestion)}
-						<Button variant="outline" size="xs" onclick={() => send(suggestion)}>
+						<Button
+							variant="outline"
+							size="xs"
+							class="w-full justify-between"
+							onclick={() => send(suggestion)}
+						>
 							{suggestion}
+							<Icon icon={ChevronRight} class="text-muted-foreground" />
 						</Button>
 					{/each}
-				</div>
-			</div>
+				</EmptyContent>
+			</Empty>
 		{/if}
 
 		{#each turns as turn, index (index)}
@@ -158,10 +221,10 @@
 				<Message>
 					{#snippet avatar()}
 						<span
-							class="mt-0.5 flex size-5 items-center justify-center rounded-full bg-ink-strong text-[10px] font-semibold text-background"
+							class="mt-0.5 flex size-5 items-center justify-center rounded-md border bg-background text-brand"
 							aria-hidden="true"
 						>
-							T
+							<Icon icon={Sparkles} class="size-3" />
 						</span>
 					{/snippet}
 
@@ -169,7 +232,7 @@
 						{#if turn.failed}
 							<Marker class="text-destructive" role="alert">
 								{#snippet icon()}
-									<TriangleAlertIcon />
+									<Icon icon={TriangleAlert} />
 								{/snippet}
 								{t("error.generic")}
 							</Marker>
@@ -184,10 +247,15 @@
 							{@const body = turn.body}
 							{@const inFlight = body.steps[turn.revealed]}
 
+							<!--
+								Completed steps stay muted. Green on every tick made a
+								five-step run a wall of colour and left nothing for the one
+								state that has earned it — a fix actually written to a cell.
+							-->
 							{#each body.steps.slice(0, turn.revealed) as step (step.key + String(step.ms))}
 								<Marker>
 									{#snippet icon()}
-										<CheckIcon class="text-success" />
+										<Icon icon={Check} />
 									{/snippet}
 									{t(`step.${step.key}`, step.params)}
 								</Marker>
@@ -221,7 +289,7 @@
 
 					{#snippet footer()}
 						{#if turn.body && turn.revealed >= turn.body.steps.length}
-							<Badge variant="outline" class="text-[10px]">
+							<Badge variant="outline" class="text-caption">
 								{turn.body.source === "llm" ? t("source.llm") : t("source.script")}
 							</Badge>
 						{/if}
@@ -231,23 +299,48 @@
 		{/each}
 	</MessageScroller>
 
-	<div class="space-y-2 border-t p-2.5">
+	<div class="shrink-0 border-t p-2.5">
 		<form
-			class="flex items-center gap-2"
 			onsubmit={(event) => {
 				event.preventDefault();
 				void send(question);
 			}}
 		>
-			<Input
-				placeholder={t("composer.placeholder")}
-				maxlength={2000}
-				disabled={pending}
-				bind:value={question}
-			/>
-			<Button type="submit" size="sm" disabled={pending || !question.trim()}>
-				{t("composer.send")}
-			</Button>
+			<InputGroup>
+				<!--
+					text-xs, overriding the primitive's text-base. The 16px default is
+					iOS' zoom guard, and this pane is a desktop taskpane where it only
+					made a two-line placeholder out of a one-line question.
+				-->
+				<InputGroupTextarea
+					rows={1}
+					class="max-h-32 min-h-0 text-xs"
+					placeholder={t("composer.placeholder")}
+					maxlength={2000}
+					disabled={pending}
+					onkeydown={onComposerKeydown}
+					bind:value={question}
+				/>
+				<InputGroupAddon align="block-end">
+					<InputGroupText class="text-caption">
+						<Kbd>↵</Kbd>
+						{t("composer.hint")}
+					</InputGroupText>
+					<Button
+						type="submit"
+						size="icon-xs"
+						class="ml-auto"
+						disabled={pending || !question.trim()}
+						aria-label={t("composer.send")}
+					>
+						{#if pending}
+							<Spinner class="size-3" />
+						{:else}
+							<Icon icon={ArrowUp} class="size-3" />
+						{/if}
+					</Button>
+				</InputGroupAddon>
+			</InputGroup>
 		</form>
 	</div>
 </div>

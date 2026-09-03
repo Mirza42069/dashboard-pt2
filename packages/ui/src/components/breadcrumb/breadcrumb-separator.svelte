@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn, type WithElementRef } from "@DashboardPT2/ui/lib/utils.js";
 	import type { HTMLLiAttributes } from "svelte/elements";
 
@@ -22,6 +22,6 @@
 	{#if children}
 		{@render children?.()}
 	{:else}
-		<ChevronRightIcon  />
+		<Icon icon={ChevronRightIcon} />
 	{/if}
 </li>

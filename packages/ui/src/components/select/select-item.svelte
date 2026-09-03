@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, CheckIcon } from "@DashboardPT2/ui/components/icons";
 	import { Select as SelectPrimitive } from "bits-ui";
 	import { cn, type WithoutChild } from "@DashboardPT2/ui/lib/utils.js";
 
@@ -26,7 +26,7 @@
 	{#snippet children({ selected, highlighted })}
 		<span class="absolute end-2 flex size-3.5 items-center justify-center">
 			{#if selected}
-				<CheckIcon class="cn-select-item-indicator-icon" />
+				<Icon icon={CheckIcon} class="cn-select-item-indicator-icon" />
 			{/if}
 		</span>
 		<span class="flex flex-1 gap-2 shrink-0 whitespace-nowrap">

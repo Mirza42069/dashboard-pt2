@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, CheckIcon } from "@DashboardPT2/ui/components/icons";
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 	import { cn, type WithoutChild } from "@DashboardPT2/ui/lib/utils.js";
 
@@ -26,7 +26,7 @@
 			data-slot="dropdown-menu-radio-item-indicator"
 		>
 			{#if checked}
-				<CheckIcon  />
+				<Icon icon={CheckIcon} />
 			{/if}
 		</span>
 		{@render childrenProp?.({ checked })}

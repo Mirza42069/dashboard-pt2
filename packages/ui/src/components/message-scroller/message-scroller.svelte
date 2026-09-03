@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowDownIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ArrowDownIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn, type WithElementRef } from "@DashboardPT2/ui/lib/utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
 
@@ -93,7 +93,7 @@
 			onclick={() => scrollToBottom({ smooth: true })}
 			class="absolute right-3 bottom-3 z-10 inline-flex size-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-md transition-colors hover:text-foreground"
 		>
-			<ArrowDownIcon class="size-3.5" />
+			<Icon icon={ArrowDownIcon} class="size-3.5" />
 		</button>
 	{/if}
 </div>

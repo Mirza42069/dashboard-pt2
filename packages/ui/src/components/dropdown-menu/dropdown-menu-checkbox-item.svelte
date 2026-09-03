@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon, MinusIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, CheckIcon, MinusIcon } from "@DashboardPT2/ui/components/icons";
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 			import { cn, type WithoutChildrenOrChild } from "@DashboardPT2/ui/lib/utils.js";
 	import type { Snippet } from "svelte";
@@ -33,9 +33,9 @@
 			data-slot="dropdown-menu-checkbox-item-indicator"
 		>
 			{#if indeterminate}
-				<MinusIcon  />
+				<Icon icon={MinusIcon} />
 			{:else if checked}
-				<CheckIcon  />
+				<Icon icon={CheckIcon} />
 			{/if}
 		</span>
 		{@render childrenProp?.()}

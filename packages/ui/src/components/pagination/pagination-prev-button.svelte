@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Pagination as PaginationPrimitive } from "bits-ui";
-	import { ChevronLeft as ChevronLeftIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ChevronLeft as ChevronLeftIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn } from "@DashboardPT2/ui/lib/utils.js";
 	import { buttonVariants } from "../button/index.js";
 
@@ -13,7 +13,7 @@
 </script>
 
 {#snippet Fallback()}
-	<ChevronLeftIcon class={cn("size-4", className)} />
+	<Icon icon={ChevronLeftIcon} class={cn("size-4", className)} />
 	<span>Previous</span>
 {/snippet}
 

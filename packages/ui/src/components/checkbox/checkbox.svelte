@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon, MinusIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, CheckIcon, MinusIcon } from "@DashboardPT2/ui/components/icons";
 	import { Checkbox as CheckboxPrimitive } from "bits-ui";
 			import { cn, type WithoutChildrenOrChild } from "@DashboardPT2/ui/lib/utils.js";
 
@@ -29,9 +29,9 @@
 			class="[&>svg]:size-3.5 grid place-content-center text-current transition-none"
 		>
 			{#if checked}
-				<CheckIcon  />
+				<Icon icon={CheckIcon} />
 			{:else if indeterminate}
-				<MinusIcon  />
+				<Icon icon={MinusIcon} />
 			{/if}
 		</div>
 	{/snippet}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Pagination as PaginationPrimitive } from "bits-ui";
-	import { ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
 	import { cn } from "@DashboardPT2/ui/lib/utils.js";
 	import { buttonVariants } from "../button/index.js";
 
@@ -14,7 +14,7 @@
 
 {#snippet Fallback()}
 	<span>Next</span>
-	<ChevronRightIcon class={cn("size-4", className)} />
+	<Icon icon={ChevronRightIcon} class={cn("size-4", className)} />
 {/snippet}
 
 <PaginationPrimitive.NextButton

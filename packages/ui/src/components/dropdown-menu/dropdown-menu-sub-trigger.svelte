@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ChevronRightIcon } from "@DashboardPT2/ui/components/icons";
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 	import { cn } from "@DashboardPT2/ui/lib/utils.js";
 
@@ -25,5 +25,5 @@
 	{...restProps}
 >
 	{@render children?.()}
-	<ChevronRightIcon class="ml-auto" />
+	<Icon icon={ChevronRightIcon} class="ml-auto" />
 </DropdownMenuPrimitive.SubTrigger>

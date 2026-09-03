@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDownIcon } from "@DashboardPT2/ui/components/icons";
+	import { Icon, ChevronDownIcon } from "@DashboardPT2/ui/components/icons";
 	import { Select as SelectPrimitive } from "bits-ui";
 	import { cn, type WithoutChild } from "@DashboardPT2/ui/lib/utils.js";
 
@@ -25,5 +25,5 @@
 	{...restProps}
 >
 	{@render children?.()}
-	<ChevronDownIcon class="size-4 text-muted-foreground pointer-events-none" />
+	<Icon icon={ChevronDownIcon} class="size-4 text-muted-foreground pointer-events-none" />
 </SelectPrimitive.Trigger>

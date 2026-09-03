@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		CircleCheckIcon,
+		Icon,
 		InfoIcon,
 		Loader2Icon,
 		OctagonXIcon,
@@ -47,18 +48,18 @@
 	{...restProps}
 >
 	{#snippet loadingIcon()}
-		<Loader2Icon class="size-4 animate-spin" />
+		<Icon icon={Loader2Icon} class="size-4 animate-spin" />
 	{/snippet}
 	{#snippet successIcon()}
-		<CircleCheckIcon class="size-4" />
+		<Icon icon={CircleCheckIcon} class="size-4" />
 	{/snippet}
 	{#snippet errorIcon()}
-		<OctagonXIcon class="size-4" />
+		<Icon icon={OctagonXIcon} class="size-4" />
 	{/snippet}
 	{#snippet infoIcon()}
-		<InfoIcon class="size-4" />
+		<Icon icon={InfoIcon} class="size-4" />
 	{/snippet}
 	{#snippet warningIcon()}
-		<TriangleAlertIcon class="size-4" />
+		<Icon icon={TriangleAlertIcon} class="size-4" />
 	{/snippet}
 </Sonner>
