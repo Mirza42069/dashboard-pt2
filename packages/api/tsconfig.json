@@ -1,9 +1,0 @@
-{
-  "extends": "@DashboardPT2/config/tsconfig.base.json",
-  "compilerOptions": {
-    "sourceMap": true,
-    "types": [
-      "bun"
-    ]
-  }
-}

@@ -1,8 +1,0 @@
-import { requireSession } from "$lib/session";
-
-import type { PageServerLoad } from "./$types";
-
-export const load: PageServerLoad = async (event) => {
-  const { user } = await requireSession(event, { skipTrialEndedRedirect: true });
-  return { email: user.email };
-};
