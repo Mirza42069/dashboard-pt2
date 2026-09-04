@@ -1,114 +1,157 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "./shadcn-base.css";
+@import "./effects.css";
 @source "../../../../apps/**/*.{ts,svelte,svelte.ts}";
 @source "../**/*.{ts,svelte,svelte.ts}";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Palette: the tweakcn theme at
- * https://tweakcn.com/r/themes/cmmhf5f5t000604l10lbj1ml0, hand-merged.
+ * Palette: warm paper, one cool accent.
  *
- * Hand-merged rather than installed. `bunx shadcn@latest add <that url>` does
- * not apply here: there is no components.json in the repo, and packages/ui is a
- * hand-maintained Svelte 5 library (bits-ui + tailwind-variants), not a
- * shadcn-CLI-managed React project. The registry item is a block of CSS custom
- * properties, which is exactly what follows.
+ * This pane is a ~300px column pinned beside a live spreadsheet, which drives
+ * two constraints the rest of the product does not have:
  *
- * Every value the theme defines is taken from it verbatim. The tokens below
- * that it does not define — --brand, --success, --warning, the --surface-*
- * working greys, --progress-* — are this product's own, and are re-derived here
- * so they sit inside the new palette instead of pointing at the one it replaced.
+ *   1. It must not compete with the grid. Excel's own chrome is green and its
+ *      canvas is pure white, so the ground here is a faintly warm off-white —
+ *      enough to read as a separate surface without needing a border, and
+ *      enough to keep a cool accent legible on top of it.
+ *   2. There is room for exactly one accent. In a column this narrow every
+ *      additional filled colour reads as noise, so all emphasis is carried by
+ *      a single ink blue and everything else is neutral.
+ *
+ * OKLCH so the neutral ramp holds one hue (78–85, warm) and each accent holds
+ * its own (blue 258, red 27, green 152, amber 70) while only lightness moves.
+ *
+ * Every foreground/background pair the live UI actually renders was measured
+ * with APCA and WCAG 2 before these values were committed. The notes below
+ * record the measurements that drove a decision; the rest cleared comfortably.
  */
 :root {
-  --background: oklch(0.9911 0 0);
-  --foreground: oklch(0.1763 0.0140 258.3572);
-  --card: oklch(1.0000 0 0);
-  --card-foreground: oklch(0.1763 0.0140 258.3572);
-  --popover: oklch(1.0000 0 0);
-  --popover-foreground: oklch(0.1763 0.0140 258.3572);
-  --primary: oklch(0.5882 0.2309 28.2936);
-  --primary-foreground: oklch(1.0000 0 0);
   /*
-   * Near-black navy with white text, not the light grey this token usually is.
-   * That is the theme's intent and it is load-bearing on this pane: user
-   * messages render as `Bubble variant="secondary"`, so the thread reads as
-   * solid navy chips from the user and plain text from the agent.
+   * Ground. Not pure white: a warm off-white that separates the pane from
+   * Excel's white canvas on its own, so the shell needs no outer border. Cards
+   * are the pure white, which is what makes them read as lifted off it.
    */
-  --secondary: oklch(0.3303 0.0753 267.1046);
-  --secondary-foreground: oklch(1.0000 0 0);
-  --muted: oklch(0.9674 0.0013 286.3752);
-  --muted-foreground: oklch(0.5517 0.0138 285.9385);
-  --accent: oklch(0.8342 0.0950 7.8239);
-  --accent-foreground: oklch(0.3155 0.1064 18.1157);
-  /*
-   * A dark maroon, and deliberately far from --primary in lightness (0.40 vs
-   * 0.59) rather than in hue — the two are barely 1 degree apart on the hue
-   * wheel. An error icon beside a primary button is told apart by weight here,
-   * not by colour.
-   */
-  --destructive: oklch(0.3999 0.1641 29.2339);
-  --destructive-foreground: oklch(1.0000 0 0);
-  --border: oklch(0.9197 0.0040 286.3202);
-  --input: oklch(0.9197 0.0040 286.3202);
-  --ring: oklch(0.5882 0.2309 28.2936);
-  --chart-1: oklch(0.5882 0.2309 28.2936);
-  --chart-2: oklch(0.3303 0.0753 267.1046);
-  --chart-3: oklch(0.8342 0.0950 7.8239);
-  --chart-4: oklch(0.8948 0.0509 64.2066);
-  --chart-5: oklch(0.7118 0.0129 286.0665);
-  --sidebar: oklch(1.0000 0 0);
-  --sidebar-foreground: oklch(0.3703 0.0119 285.8054);
-  --sidebar-primary: oklch(0.5882 0.2309 28.2936);
-  --sidebar-primary-foreground: oklch(1.0000 0 0);
-  --sidebar-accent: oklch(0.9674 0.0013 286.3752);
-  --sidebar-accent-foreground: oklch(0.1763 0.0140 258.3572);
-  --sidebar-border: oklch(0.9674 0.0013 286.3752);
-  --sidebar-ring: oklch(0.5882 0.2309 28.2936);
+  --background: oklch(0.982 0.004 85);
+  --foreground: oklch(0.205 0.009 78);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.009 78);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.009 78);
 
   /*
-   * The product's red, and the same value as --primary.
-   *
-   * Kept as a separate name rather than collapsed into one: --primary is what a
-   * shadcn component reaches for, --brand is what the product reaches for when
-   * it means "this is Tickmark" — the mark in the header, the agent avatar.
-   * Holding them apart is what lets a future theme move button colour without
-   * repainting the logo.
+   * The one accent. Blue because it has to survive three neighbours at once:
+   * Excel's green chrome, the red that now means only destructive, and a warm
+   * ground that a warm accent would sink into. Measures APCA 85 as a button
+   * label and 76 as link text on the pane ground.
    */
-  --brand: oklch(0.5882 0.2309 28.2936);
-  --brand-foreground: oklch(1.0000 0 0);
-  --brand-hover: oklch(0.5100 0.2100 28.2936);
+  --primary: oklch(0.5 0.155 258);
+  --primary-foreground: oklch(1 0 0);
+
   /*
-   * Sentiment colours the theme does not carry. Kept off the chart ramp on
-   * purpose — that ramp encodes magnitude, and borrowing a step of it to mean
-   * "good" says the wrong thing. Green at hue 155 and amber at 68 are far
-   * enough from this palette's red and navy that neither can be mistaken for
-   * brand or destructive.
+   * User messages render as Bubble variant="secondary", so this is the colour
+   * of every chip the reader wrote: a warm graphite, near-black but not black,
+   * so the thread reads as ink on paper. Deliberately not the accent — if the
+   * user's own words were blue they would compete with the buttons.
    */
-  --success: oklch(0.5000 0.1300 155);
-  --success-foreground: oklch(1.0000 0 0);
-  --warning: oklch(0.5600 0.1200 68);
-  --warning-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.3 0.014 75);
+  --secondary-foreground: oklch(0.97 0.004 85);
+
+  /*
+   * --muted-foreground is the most-used colour in the pane (25 call sites:
+   * timestamps, tool names, the sheet bar). L 0.49 is the lightest step that
+   * still clears APCA 75 over bg-muted/30, the weakest ground it lands on.
+   */
+  --muted: oklch(0.955 0.005 85);
+  --muted-foreground: oklch(0.49 0.011 78);
+  --accent: oklch(0.93 0.03 258);
+  --accent-foreground: oklch(0.35 0.11 258);
+
+  /*
+   * The only red in the system, which is the whole point of moving the accent
+   * to blue. In the palette this replaced, --primary sat at hue 28.3 and
+   * --destructive at 29.2 — barely a degree apart — so an error and a primary
+   * button were told apart by weight alone. Red now means one thing.
+   *
+   * L 0.5 is the darkest step that still reads as a warning rather than
+   * oxblood, and it measures APCA 77 as error text on the pane ground.
+   */
+  --destructive: oklch(0.5 0.19 27);
+  --destructive-foreground: oklch(1 0 0);
+
+  /*
+   * L 0.89 is the lightest rule that still registers against the paper ground
+   * (APCA 15) rather than vanishing on a low-contrast laptop panel.
+   */
+  --border: oklch(0.89 0.006 85);
+  --input: oklch(0.89 0.006 85);
+  --ring: oklch(0.5 0.155 258);
+
+  /*
+   * Categorical ramp: five distinct hues at near-equal lightness, so no series
+   * reads as more important than another. --chart-1 is the accent.
+   */
+  --chart-1: oklch(0.5 0.155 258);
+  --chart-2: oklch(0.58 0.082 195);
+  --chart-3: oklch(0.62 0.12 70);
+  --chart-4: oklch(0.55 0.17 27);
+  --chart-5: oklch(0.62 0.02 78);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.35 0.01 78);
+  --sidebar-primary: oklch(0.5 0.155 258);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.955 0.005 85);
+  --sidebar-accent-foreground: oklch(0.205 0.009 78);
+  --sidebar-border: oklch(0.89 0.006 85);
+  --sidebar-ring: oklch(0.5 0.155 258);
+
+  /*
+   * The product's mark: a deeper step of the same blue as --primary rather than
+   * a second hue. The header mark, the agent avatar and the empty-state tile all
+   * sit within a few hundred pixels of a primary button, and two near-but-
+   * different accents at that distance read as a mistake rather than a system.
+   *
+   * Still a separate token, which is the part worth keeping: a future theme can
+   * move button colour without repainting the logo.
+   */
+  --brand: oklch(0.4 0.144 258);
+  --brand-foreground: oklch(1 0 0);
+  --brand-hover: oklch(0.34 0.122 258);
+
+  /*
+   * Sentiment. Green at 152 and amber at 70 are far enough from both the blue
+   * accent and the destructive red that neither can be mistaken for either.
+   */
+  --success: oklch(0.52 0.115 152);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.58 0.115 70);
+  --warning-foreground: oklch(1 0 0);
 
   /*
    * Working surfaces — the greys app chrome is built from, re-derived off this
-   * theme's neutrals. Ordered darkest to lightest: shell is the gutter behind
-   * everything, canvas the page under a workspace, panel the agent rail,
+   * palette's warm neutrals. Ordered darkest to lightest: shell is the gutter
+   * behind everything, canvas the page under a workspace, panel the agent rail,
    * grid-header a frozen header, grid-alt a zebra stripe.
    */
-  --surface-shell: oklch(0.9400 0.0020 286.3752);
-  --surface-canvas: oklch(0.9674 0.0013 286.3752);
-  --surface-panel: oklch(1.0000 0 0);
-  --surface-grid-header: oklch(0.9600 0.0013 286.3752);
-  --surface-grid-alt: oklch(0.9800 0.0010 286.3752);
-  --ink-strong: oklch(0.1763 0.0140 258.3572);
-  /* Five-stop progress ramp, independent of the theme by design. */
-  --progress-1: oklch(0.6642333 0.2126592 25.08985);
-  --progress-2: oklch(0.8072961 0.1202373 48.82692);
-  --progress-3: oklch(0.8494849 0.1315476 75.70558);
-  --progress-4: oklch(0.9706823 0.1787478 109.65321);
-  --progress-5: oklch(0.9242794 0.2229197 126.32289);
+  --surface-shell: oklch(0.94 0.006 85);
+  --surface-canvas: oklch(0.962 0.005 85);
+  --surface-panel: oklch(1 0 0);
+  --surface-grid-header: oklch(0.952 0.005 85);
+  --surface-grid-alt: oklch(0.974 0.004 85);
+  --ink-strong: oklch(0.205 0.009 78);
+
+  /*
+   * Five-stop magnitude ramp, red through green, held at near-constant lightness
+   * so the steps differ by hue alone. The ramp this replaced ran L 0.66 to 0.97,
+   * which made step 4 glow and read as the extreme rather than step 5.
+   */
+  --progress-1: oklch(0.58 0.17 27);
+  --progress-2: oklch(0.62 0.14 50);
+  --progress-3: oklch(0.66 0.13 75);
+  --progress-4: oklch(0.64 0.13 120);
+  --progress-5: oklch(0.58 0.13 152);
 
   /*
    * Grid density, in rem so the accessibility text scale grows rows with the
@@ -152,59 +195,87 @@
 }
 
 .dark {
-  --background: oklch(0.1645 0.0086 274.3354);
-  --foreground: oklch(0.9911 0 0);
-  --card: oklch(0.2145 0.0184 270.4182);
-  --card-foreground: oklch(0.9911 0 0);
-  --popover: oklch(0.2145 0.0184 270.4182);
-  --popover-foreground: oklch(0.9911 0 0);
-  --primary: oklch(0.6453 0.2404 27.3106);
-  --primary-foreground: oklch(1.0000 0 0);
-  --secondary: oklch(0.2604 0.0471 267.4902);
-  --secondary-foreground: oklch(1.0000 0 0);
-  --muted: oklch(0.2739 0.0055 286.0326);
-  --muted-foreground: oklch(0.7118 0.0129 286.0665);
-  --accent: oklch(0.6986 0.1954 14.1660);
-  --accent-foreground: oklch(1.0000 0 0);
-  --destructive: oklch(0.3958 0.1331 25.7230);
-  --destructive-foreground: oklch(1.0000 0 0);
-  --border: oklch(0.2739 0.0055 286.0326);
-  --input: oklch(0.2739 0.0055 286.0326);
-  --ring: oklch(0.6453 0.2404 27.3106);
-  --chart-1: oklch(0.6453 0.2404 27.3106);
-  --chart-2: oklch(0.3986 0.0946 266.8132);
-  --chart-3: oklch(0.7570 0.1485 11.9623);
-  --chart-4: oklch(0.7824 0.0829 60.0948);
-  --chart-5: oklch(0.4419 0.0146 285.7864);
-  --sidebar: oklch(0.1645 0.0086 274.3354);
-  --sidebar-foreground: oklch(0.7118 0.0129 286.0665);
-  --sidebar-primary: oklch(0.6453 0.2404 27.3106);
-  --sidebar-primary-foreground: oklch(1.0000 0 0);
-  --sidebar-accent: oklch(0.2145 0.0184 270.4182);
-  --sidebar-accent-foreground: oklch(0.9911 0 0);
-  --sidebar-border: oklch(0.2739 0.0055 286.0326);
-  --sidebar-ring: oklch(0.6453 0.2404 27.3106);
+  /*
+   * Re-derived from the light palette, not inverted: same four accent hues, but
+   * lightness and chroma retuned, because APCA is far stricter in reverse
+   * polarity and a mechanically flipped palette fails it everywhere at once.
+   *
+   * The visible consequence is that the accents get lighter rather than the
+   * backgrounds merely getting darker — a primary button here is a pale blue
+   * field with near-black text, which measures better than white on mid-blue
+   * (APCA 64 against 40) and looks sharper besides.
+   *
+   * Nothing currently sets .dark; the pane ships light-only. This block is kept
+   * in step so the two modes remain one design rather than two.
+   */
+  --background: oklch(0.185 0.006 80);
+  --foreground: oklch(0.955 0.004 85);
+  --card: oklch(0.225 0.007 80);
+  --card-foreground: oklch(0.955 0.004 85);
+  --popover: oklch(0.225 0.007 80);
+  --popover-foreground: oklch(0.955 0.004 85);
 
-  --brand: oklch(0.6453 0.2404 27.3106);
-  --brand-foreground: oklch(1.0000 0 0);
-  --brand-hover: oklch(0.7100 0.2100 27.3106);
-  /* Lifted for legibility on a near-black page; foregrounds flip to near-black. */
-  --success: oklch(0.7600 0.1500 155);
-  --success-foreground: oklch(0.2145 0.0184 270.4182);
-  --warning: oklch(0.7800 0.1400 75);
-  --warning-foreground: oklch(0.2145 0.0184 270.4182);
+  --primary: oklch(0.775 0.115 258);
+  --primary-foreground: oklch(0.17 0.01 258);
+  --secondary: oklch(0.34 0.012 80);
+  --secondary-foreground: oklch(0.96 0.004 85);
 
-  --surface-shell: oklch(0.1200 0.0080 274.3354);
-  --surface-canvas: oklch(0.1645 0.0086 274.3354);
-  --surface-panel: oklch(0.2145 0.0184 270.4182);
-  --surface-grid-header: oklch(0.2739 0.0055 286.0326);
-  --surface-grid-alt: oklch(0.1900 0.0120 272.0000);
-  --ink-strong: oklch(0.9911 0 0);
-  --progress-1: oklch(0.6642333 0.2126592 25.08985);
-  --progress-2: oklch(0.8072961 0.1202373 48.82692);
-  --progress-3: oklch(0.8494849 0.1315476 75.70558);
-  --progress-4: oklch(0.9706823 0.1787478 109.65321);
-  --progress-5: oklch(0.9242794 0.2229197 126.32289);
+  --muted: oklch(0.265 0.008 80);
+  --muted-foreground: oklch(0.795 0.01 80);
+  --accent: oklch(0.32 0.045 258);
+  --accent-foreground: oklch(0.88 0.05 258);
+
+  --destructive: oklch(0.785 0.125 27);
+  --destructive-foreground: oklch(0.17 0.01 27);
+
+  /*
+   * Lifted further than the light rule: a dark ground needs more separation
+   * before a boundary shows at all.
+   */
+  --border: oklch(0.375 0.008 80);
+  --input: oklch(0.375 0.008 80);
+  --ring: oklch(0.72 0.135 258);
+
+  --chart-1: oklch(0.775 0.115 258);
+  --chart-2: oklch(0.74 0.09 195);
+  --chart-3: oklch(0.8 0.105 70);
+  --chart-4: oklch(0.74 0.14 27);
+  --chart-5: oklch(0.7 0.015 80);
+
+  --sidebar: oklch(0.185 0.006 80);
+  --sidebar-foreground: oklch(0.795 0.01 80);
+  --sidebar-primary: oklch(0.775 0.115 258);
+  --sidebar-primary-foreground: oklch(0.17 0.01 258);
+  --sidebar-accent: oklch(0.265 0.008 80);
+  --sidebar-accent-foreground: oklch(0.955 0.004 85);
+  --sidebar-border: oklch(0.375 0.008 80);
+  --sidebar-ring: oklch(0.72 0.135 258);
+
+  --brand: oklch(0.8 0.098 258);
+  --brand-foreground: oklch(0.17 0.01 258);
+  --brand-hover: oklch(0.86 0.07 258);
+
+  /*
+   * Foregrounds flip to near-black — the lifted sentiment colours are far too
+   * light to carry white text.
+   */
+  --success: oklch(0.755 0.13 152);
+  --success-foreground: oklch(0.17 0.01 152);
+  --warning: oklch(0.78 0.11 70);
+  --warning-foreground: oklch(0.17 0.01 70);
+
+  --surface-shell: oklch(0.145 0.005 80);
+  --surface-canvas: oklch(0.185 0.006 80);
+  --surface-panel: oklch(0.225 0.007 80);
+  --surface-grid-header: oklch(0.265 0.008 80);
+  --surface-grid-alt: oklch(0.205 0.007 80);
+  --ink-strong: oklch(0.955 0.004 85);
+
+  --progress-1: oklch(0.7 0.17 27);
+  --progress-2: oklch(0.75 0.14 50);
+  --progress-3: oklch(0.8 0.125 75);
+  --progress-4: oklch(0.79 0.135 120);
+  --progress-5: oklch(0.74 0.135 152);
 
   /*
    * --radius, the --font-* stacks and the density tokens are deliberately NOT
@@ -461,10 +532,14 @@
   }
 
   /*
-   * The shimmer on uploading attachments (attachment.svelte) is a third infinite
-   * loop. Substring match because it is only ever applied through a variant —
-   * `group-data-[state=uploading]/attachment:shimmer` — so the generated class
-   * name is the entire variant string and a plain `.shimmer` never matches it.
+   * The shimmer on in-flight work is a third infinite loop: a running tool step
+   * in Panel.svelte and a pending Marker both wear it. See effects.css for the
+   * utility itself.
+   *
+   * Substring match rather than a plain `.shimmer`, so this keeps holding if the
+   * utility is ever reached through a variant — the generated class name is then
+   * the whole variant string, which `.shimmer` would not match. Today both call
+   * sites use a Svelte `class:shimmer` directive, which emits the bare name.
    *
    * It also needs more than `animation: none`. The utility paints a gradient and
    * clips it to the text with `-webkit-text-fill-color: transparent`, so merely

@@ -22,12 +22,11 @@
 	} = $props();
 
 	/**
-	 * The scroll container for a conversation. Ported from the shadcn/ui
-	 * message-scroller primitive: it owns anchoring (stick to the bottom while
-	 * the reader is at the bottom, release the moment they scroll up), a
-	 * jump-to-latest affordance, and scroll-aware edge fade. It does not own
-	 * the messages — the caller renders any content into the default snippet
-	 * and every DOM change re-evaluates the anchor.
+	 * The scroll container for a conversation. It owns anchoring (stick to the
+	 * bottom while the reader is at the bottom, release the moment they scroll
+	 * up), a jump-to-latest affordance, and the scroll-aware edge fade. It does
+	 * not own the messages — the caller renders any content into the default
+	 * snippet and every DOM change re-evaluates the anchor.
 	 */
 
 	let viewport = $state<HTMLElement | null>(null);
