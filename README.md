@@ -1,11 +1,18 @@
-# Tickmark Copilot for Excel
+# Tickmark for Excel
 
-An Excel taskpane add-in (Office Add-in) with a tax agent for Indonesian
-Coretax workflows. It reads the active sheet, runs deterministic Coretax
-checks — NPWP format, PPN = 11% of DPP, duplicate invoice numbers, required
-fields, invalid dates — and can answer free-text questions through Vercel AI
-Gateway. Fixes are proposed with a cell reference and applied only when you
-click **Apply**; the agent never writes to the workbook by itself.
+An Excel taskpane add-in (Office Add-in) with an agent that works on whatever
+workbook you have open.
+
+The agent starts with **no knowledge of your data**. It has no list of expected
+column names, no rules about what a valid value looks like, and no assumption
+that the sheet is any particular kind of document. The only way it can learn
+anything is to call a tool and read the result — list the sheets, read a range,
+read your selection, search for a value. It works the sheet out from what comes
+back, and cites the cells it is talking about.
+
+It can change the workbook too, but never on its own: a write is shown as a diff
+(`F7: 250 → =D7*E7`) and reaches Excel only when you click **Apply**. If you
+discard it, the agent is told you declined and moves on.
 
 ## Run the demo
 
@@ -14,15 +21,13 @@ bun install
 bun run dev
 ```
 
-Then open **https://localhost:5174** in a browser. Without Office.js present
-the pane runs in **Preview mode** against a sample Faktur Keluaran sheet
-seeded with defects: a 5-digit NPWP, a PPN that is not 11% of DPP, a duplicate
-invoice number, a missing DPP, and a 31 February date. Click the suggestion
-chips or type a question.
+Then open **https://localhost:5174** in a browser. Without Office.js present the
+pane runs in **Preview mode** against a small two-sheet sample workbook, so the
+whole agent is demonstrable before anything is sideloaded.
 
 The first `bun run dev` may ask (Windows UAC) to install the Office developer
-CA — Office only loads taskpanes over HTTPS, even from localhost. Or install
-it up front:
+CA — Office only loads taskpanes over HTTPS, even from localhost. Or install it
+up front:
 
 ```sh
 bunx office-addin-dev-certs install
@@ -31,23 +36,42 @@ bunx office-addin-dev-certs install
 ## Use it in Excel
 
 1. `bun run dev`
-2. Excel → Insert → My Add-ins → Upload My Add-in (or the shared-folder
-   catalog on Windows) → sideload `apps/addin/manifest.xml`
-3. The pane opens on the right; the header badge reads **Excel** and the
-   agent works on your real active sheet. **Refresh** re-reads it, **Apply**
-   writes a suggested value into the referenced cell.
+2. Excel → Insert → My Add-ins → Upload My Add-in (or the shared-folder catalog
+   on Windows) → sideload `apps/addin/manifest.xml`
+3. The pane opens on the right and the header badge reads **Excel**. The agent
+   now works on your real workbook; **Apply** writes an approved edit into the
+   referenced cell.
+
+Everything the agent does stays inside ExcelApi 1.1, which is what the manifest
+requires — no newer requirement set is needed.
+
+## What the agent can do
+
+| Tool | |
+| --- | --- |
+| `list_sheets` | Every worksheet, its used range and size, which is active |
+| `read_used_range` | Everything a sheet uses, as values |
+| `read_range` | A specific A1 range, optionally with formulas |
+| `get_selection` | Whatever you have selected right now |
+| `find_cells` | Substring search across one sheet or the workbook |
+| `write_cells` | Propose literal values — **needs your approval** |
+| `write_formula` | Propose a formula — **needs your approval** |
+
+Read results are capped (200 rows × 40 columns) and flagged `truncated`, so the
+agent reads further rather than assuming it saw everything.
 
 ## Configuration
 
-`apps/addin/.env.local` (gitignored):
+`apps/addin/.env` (gitignored):
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_AI_GATEWAY_KEY` | Vercel AI Gateway key. Omit and the agent still runs all checks; only the free-text answers go away |
+| `VITE_AI_GATEWAY_KEY` | Vercel AI Gateway key. Without it the pane says so instead of failing mid-turn |
 | `VITE_AI_MODEL` | Gateway model id. Default: `zai/glm-5.3-flash` |
 
-The key ships to the browser by design — this pane has no server — so use a
-disposable, demo-scoped key.
+The key ships to the browser by design — this pane has no server, and the
+gateway allows the request from the pane's origin — so use a disposable,
+demo-scoped key.
 
 ## Layout
 
@@ -58,14 +82,15 @@ apps/addin
 └── src
     ├── App.svelte        Office.onReady gate → Panel
     ├── components
-    │   ├── Panel.svelte      sheet bar, thread, composer
-    │   └── IssueList.svelte  findings with Apply buttons
+    │   ├── Panel.svelte     sheet bar, thread, composer
+    │   └── EditList.svelte  proposed edits with Apply / Discard
     └── lib
-        ├── office.ts     Office.js boundary + browser-preview mock sheet
-        ├── agent.ts      deterministic Coretax checks + step timeline
-        ├── ai.ts         optional Vercel AI Gateway call
-        └── i18n.ts       EN/ID strings, locale from the browser
+        ├── office.ts     Office.js boundary + the browser-preview workbook
+        ├── gateway.ts    streaming OpenAI-compatible client
+        ├── tools.ts      the tool registry and the edit preview
+        ├── agent.ts      the tool-calling loop and the system prompt
+        └── i18n.ts       EN/ID chrome strings, locale from the browser
 ```
 
-Shared UI primitives and the shadcn-style theme live in `packages/ui`
-(consumed as source via Vite alias).
+Shared UI primitives and the theme live in `packages/ui` (consumed as source via
+a Vite alias).

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-  Tickmark Copilot — Excel taskpane add-in (prototype manifest).
+  Tickmark — Excel taskpane add-in (prototype manifest).
 
   Points at the local Vite dev server (office-addin-dev-certs provides the
   trusted https certificate). For a deployed build, replace every
@@ -19,7 +19,7 @@
   <ProviderName>Tickmark</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Tickmark Copilot" />
-  <Description DefaultValue="Tax agent for Excel — Coretax validation and answers from your workbook." />
+  <Description DefaultValue="An agent in the task pane that reads your workbook with tools and proposes cell edits for you to approve." />
   <IconUrl DefaultValue="https://localhost:5174/icon-64.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:5174/icon-64.png" />
   <SupportUrl DefaultValue="https://localhost:5174/" />
@@ -42,6 +42,6 @@
     <SourceLocation DefaultValue="https://localhost:5174/" />
   </DefaultSettings>
 
-  <!-- ReadWriteDocument: applying fixes writes cell values. -->
+  <!-- ReadWriteDocument: an approved edit writes cell values and formulas. -->
   <Permissions>ReadWriteDocument</Permissions>
 </OfficeApp>

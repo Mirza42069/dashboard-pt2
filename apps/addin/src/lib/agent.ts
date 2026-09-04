@@ -1,289 +1,217 @@
-import { getLocale } from "./i18n";
+import { GatewayError, hasModel, streamChat, type ChatMessage, type ToolCall } from "./gateway";
+import { applyEdits, findTool, previewEdits, toolSchemas, type PendingEdit } from "./tools";
 
 /**
- * The sidepanel agent, running entirely in the browser.
+ * The agent: a tool-calling loop over the workbook.
  *
- * Same shape the server version had: a deterministic pass over the sheet
- * excerpt that never fabricates — every issue carries a cell reference and,
- * when one exists, the exact value to write back — plus an optional LLM pass
- * through Vercel AI Gateway for free-text questions. No key configured, no
- * network, or a blocked request all degrade to checks-only; the UI labels the
- * turn's source either way.
+ * It knows nothing about what any workbook contains. There is no vocabulary of
+ * expected column names here, no rule about what a valid value looks like, no
+ * assumption about the document being any particular kind of document — the
+ * prompt below says so out loud, and the only way for the model to learn
+ * anything is to call a tool and read what comes back.
+ *
+ * The conversation persists across turns on this instance, so a follow-up
+ * ("now the same for column E") resolves against what the agent already saw
+ * instead of starting from nothing.
+ *
+ * Writes suspend the loop. When the model calls a write tool the agent yields an
+ * `approval` event carrying the diff and waits on `requestApproval`; whatever the
+ * person decides is fed back as the tool result, so a declined edit is something
+ * the model is told about and can respond to, not a silent no-op.
  */
 
-export type AddinIssue = {
-  /** Excel A1 reference of the offending cell, header row = row 1. */
-  ref: string;
-  /** 1-based sheet row number. */
-  row: number;
-  /** Header text of the offending column, as the sheet spells it. */
-  header: string;
-  /** Stable check code, rendered by the i18n dictionary. */
-  code: string;
-  severity: "ERROR" | "WARNING";
-  /** The value a fix would write back, when a fix exists. */
-  expected: string | null;
+const SYSTEM = [
+  "You are the assistant in a Microsoft Excel task pane. You are talking to the person who has this workbook open in front of them.",
+  "",
+  "You cannot see the workbook. Calling tools is the only way to learn anything about it. Before you state any fact about the data, call a tool and read the result. Never guess or invent a cell value, a header, a sheet name, a total, or a row count.",
+  "",
+  "How to work:",
+  "- If you do not know what you are looking at, start with list_sheets, or get_selection when the person says 'this', 'here' or 'the selection'.",
+  "- read_used_range is the quickest way to see a whole sheet. read_range is for when you already know the address.",
+  "- Tool results are capped in size. If one comes back with truncated set to true, read further ranges rather than assuming you saw everything.",
+  "- Work out what the columns mean from the sheet itself — the header row, the values, the formulas. Do not assume a sheet is any particular kind of document.",
+  "- Cite cell references when you state a fact, in A1 form: B7, or Sheet2!B7 when the sheet is not obvious.",
+  "",
+  "Changing the workbook:",
+  "- Use write_cells for literal values and write_formula for formulas.",
+  "- Every edit needs the person's approval before it reaches the workbook. Say what you are about to change and why before you propose it.",
+  "- If a write comes back with applied set to false, they declined. Acknowledge that and move on. Do not propose the same edit again unless they ask.",
+  "",
+  "If a tool returns an error, say what failed and what you would need instead. Never describe a failed call as if it succeeded.",
+  "",
+  "Reply in the language the person wrote to you in. Keep answers short and concrete — this is a narrow side panel, not a report.",
+].join("\n");
+
+/** How many tool rounds before the agent is made to answer with what it has. */
+const MAX_ROUNDS = 8;
+
+export type ApprovalRequest = {
+  id: string;
+  tool: string;
+  edits: PendingEdit[];
 };
 
-export type AddinStep = {
-  key: string;
-  params?: Record<string, string | number>;
-  ms: number;
-};
+export type AgentEvent =
+  | { type: "reasoning"; delta: string }
+  | { type: "text"; delta: string }
+  | { type: "tool_start"; id: string; name: string; label: string; args: unknown }
+  | { type: "tool_end"; id: string; ok: boolean; summary: string; detail: string }
+  | { type: "approval_end"; id: string; applied: boolean }
+  | { type: "error"; message: string };
 
-export type AddinAgentBody = {
-  intent: "validate" | "summarize" | "ask" | "fallback";
-  params: Record<string, string | number>;
-  steps: AddinStep[];
-  issues: AddinIssue[];
-  /** LLM prose, present only when the gateway answered. */
-  answer: string | null;
-  source: "script" | "llm";
-};
+export type Decision = "apply" | "discard";
 
-export type SheetInput = {
-  name: string;
-  headers: string[];
-  rows: (string | number | boolean | null)[][];
-};
-
-/** Bilingual header vocabulary, checked in order. */
-const COLUMN_MATCHERS: { field: string; pattern: RegExp }[] = [
-  { field: "invoice", pattern: /(nomor\s*faktur|no\.?\s*faktur|invoice\s*(no|number)?|faktur)/i },
-  { field: "customer", pattern: /(lawan\s*transaksi|customer|buyer|pembeli)/i },
-  { field: "npwp", pattern: /(npwp|tin\b|tax\s*id)/i },
-  { field: "date", pattern: /(tanggal|tgl\b|date)/i },
-  { field: "dpp", pattern: /(dpp|base\s*amount|nilai\s*dpp|jumlah\s*dpp)/i },
-  { field: "ppn", pattern: /(^|[^a-z])ppn([^a-z]|$)|\bvat\b/i },
-];
-
-function columnLetter(index: number): string {
-  let letter = "";
-  let n = index;
-  do {
-    letter = String.fromCharCode(65 + (n % 26)) + letter;
-    n = Math.floor(n / 26) - 1;
-  } while (n >= 0);
-  return letter;
+/** Trim a tool result to something worth spending context on. */
+function serializeResult(value: unknown): string {
+  const text = JSON.stringify(value ?? null);
+  return text.length > 12_000 ? `${text.slice(0, 12_000)}…` : text;
 }
 
-function cellText(value: string | number | boolean | null | undefined): string {
-  if (value === null || value === undefined) return "";
-  return String(value).trim();
-}
+export class Agent {
+  private messages: ChatMessage[] = [{ role: "system", content: SYSTEM }];
 
-function digitsOnly(value: string): string {
-  return value.replace(/\D/gu, "");
-}
-
-/**
- * Sheet numbers arrive the way people type them: "1.250.000,50" or "1,250,000.50".
- * Normalize both to a float — separators thousands-group unless they are the
- * decimal comma immediately followed by 1–2 digits.
- */
-function parseAmount(value: string | number | boolean | null | undefined): number | null {
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const raw = cellText(value);
-  if (!raw) return null;
-  const cleaned = raw.replace(/[rp$]\s*/giu, "").replace(/\s/gu, "");
-  const normalized =
-    /^\d{1,3}([.,]\d{3})+([.,]\d{1,2})?$/.test(cleaned)
-      ? cleaned.replace(/[.,](?=\d{3}\b)/gu, "").replace(",", ".")
-      : cleaned.replace(",", ".");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function stepMs(base: number, rows: number) {
-  return base + Math.min(rows, 400) * 7;
-}
-
-function matchIntent(question: string): AddinAgentBody["intent"] {
-  // "valida" covers validate/validating and Indonesian "validasi" alike.
-  if (/(valida|cek|check|periksa|issues?|error|salah|npwp|ppn|faktur|pajak)/iu.test(question)) {
-    return "validate";
-  }
-  if (/(summar|ringkas|overview|status|recap|rekap)/iu.test(question)) {
-    return "summarize";
-  }
-  return "ask";
-}
-
-function detectColumns(headers: string[]) {
-  const map = new Map<string, number>();
-  headers.forEach((header, index) => {
-    for (const { field, pattern } of COLUMN_MATCHERS) {
-      if (!map.has(field) && pattern.test(header)) {
-        map.set(field, index);
-        break;
-      }
-    }
-  });
-  return map;
-}
-
-function runChecks(sheet: SheetInput): { issues: AddinIssue[]; columns: Map<string, number> } {
-  const issues: AddinIssue[] = [];
-  const columns = detectColumns(sheet.headers);
-
-  const invoiceColumn = columns.get("invoice");
-  const npwpColumn = columns.get("npwp");
-  const dppColumn = columns.get("dpp");
-  const ppnColumn = columns.get("ppn");
-  const dateColumn = columns.get("date");
-
-  const seenInvoices = new Map<string, number>();
-
-  sheet.rows.forEach((row, rowIndex) => {
-    const rowNumber = rowIndex + 2; // header is row 1
-    const ref = (index: number) => `${columnLetter(index)}${rowNumber}`;
-
-    for (const field of ["invoice", "npwp", "dpp"] as const) {
-      const index = columns.get(field);
-      if (index !== undefined && !cellText(row[index])) {
-        issues.push({
-          ref: ref(index),
-          row: rowNumber,
-          header: sheet.headers[index] ?? "",
-          code: `missing_${field}`,
-          severity: "ERROR",
-          expected: null,
-        });
-      }
-    }
-
-    if (npwpColumn !== undefined) {
-      const npwp = digitsOnly(cellText(row[npwpColumn]));
-      if (npwp && npwp.length !== 15 && npwp.length !== 16) {
-        issues.push({
-          ref: ref(npwpColumn),
-          row: rowNumber,
-          header: sheet.headers[npwpColumn] ?? "",
-          code: "bad_npwp",
-          severity: "ERROR",
-          // A truncated NPWP cannot be auto-completed — the real value has to
-          // come from the user.
-          expected: null,
-        });
-      }
-    }
-
-    if (dppColumn !== undefined) {
-      const dpp = parseAmount(row[dppColumn]);
-      if (dpp !== null && dpp <= 0) {
-        issues.push({
-          ref: ref(dppColumn),
-          row: rowNumber,
-          header: sheet.headers[dppColumn] ?? "",
-          code: "non_positive_dpp",
-          severity: "ERROR",
-          expected: null,
-        });
-      }
-    }
-
-    if (dppColumn !== undefined && ppnColumn !== undefined) {
-      const dpp = parseAmount(row[dppColumn]);
-      const ppn = parseAmount(row[ppnColumn]);
-      if (dpp !== null && dpp > 0 && ppn !== null) {
-        const expectedPpn = Math.round(dpp * 0.11 * 100) / 100;
-        if (Math.abs(ppn - expectedPpn) > 1) {
-          issues.push({
-            ref: ref(ppnColumn),
-            row: rowNumber,
-            header: sheet.headers[ppnColumn] ?? "",
-            code: "vat_mismatch",
-            severity: "WARNING",
-            expected: String(expectedPpn),
-          });
-        }
-      }
-    }
-
-    if (dateColumn !== undefined) {
-      const raw = cellText(row[dateColumn]);
-      if (raw && !parseAmount(raw)) {
-        const parsed = new Date(raw);
-        if (Number.isNaN(parsed.getTime())) {
-          issues.push({
-            ref: ref(dateColumn),
-            row: rowNumber,
-            header: sheet.headers[dateColumn] ?? "",
-            code: "bad_date",
-            severity: "WARNING",
-            expected: null,
-          });
-        }
-      }
-    }
-
-    if (invoiceColumn !== undefined) {
-      const invoice = cellText(row[invoiceColumn]).toUpperCase();
-      if (invoice) {
-        const firstRow = seenInvoices.get(invoice);
-        if (firstRow !== undefined) {
-          issues.push({
-            ref: ref(invoiceColumn),
-            row: rowNumber,
-            header: sheet.headers[invoiceColumn] ?? "",
-            code: "duplicate_invoice",
-            severity: "WARNING",
-            expected: null,
-          });
-        } else {
-          seenInvoices.set(invoice, rowNumber);
-        }
-      }
-    }
-  });
-
-  return { issues, columns };
-}
-
-export async function runAgent(question: string, sheet: SheetInput): Promise<AddinAgentBody> {
-  const { consultModel } = await import("./ai");
-  const locale = getLocale();
-  const intent = matchIntent(question);
-  const rowCount = sheet.rows.length;
-  const baseParams = { rows: rowCount, columns: sheet.headers.length };
-  const { issues, columns } = runChecks(sheet);
-
-  if (intent === "ask" || intent === "summarize") {
-    const steps: AddinStep[] = [
-      { key: "read_sheet", params: baseParams, ms: stepMs(120, rowCount) },
-      { key: "map_columns", params: { mapped: columns.size }, ms: 90 + columns.size * 5 },
-    ];
-    const answer = await consultModel({ question, sheet, locale, issues });
-    steps.push(answer ? { key: "consult_model", ms: 640 } : { key: "script_only", ms: 60 });
-    return {
-      intent,
-      params: answer ? baseParams : { ...baseParams, note: "no_model" },
-      steps,
-      issues: [],
-      answer,
-      source: answer ? "llm" : "script",
-    };
+  reset(): void {
+    this.messages = [{ role: "system", content: SYSTEM }];
   }
 
-  const steps: AddinStep[] = [
-    { key: "read_sheet", params: baseParams, ms: stepMs(120, rowCount) },
-    { key: "map_columns", params: { mapped: columns.size }, ms: 90 + columns.size * 5 },
-    { key: "check_rows", params: { issues: issues.length }, ms: stepMs(210, rowCount) },
-  ];
+  get hasModel(): boolean {
+    return hasModel();
+  }
 
-  const answer = await consultModel({ question, sheet, locale, issues });
-  if (answer) steps.push({ key: "consult_model", ms: 640 });
-
-  return {
-    intent: "validate",
-    params: {
-      ...baseParams,
-      issues: issues.length,
-      errors: issues.filter((issue) => issue.severity === "ERROR").length,
+  async *send(
+    userText: string,
+    options: {
+      signal: AbortSignal;
+      requestApproval: (request: ApprovalRequest) => Promise<Decision>;
     },
-    steps,
-    issues,
-    answer,
-    source: answer ? "llm" : "script",
-  };
+  ): AsyncGenerator<AgentEvent> {
+    this.messages.push({ role: "user", content: userText });
+
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      const lastRound = round === MAX_ROUNDS - 1;
+      let text = "";
+      let calls: ToolCall[] = [];
+
+      try {
+        for await (const event of streamChat({
+          messages: this.messages,
+          // On the final round the tools are withheld, which is what forces a
+          // written answer instead of a ninth call into the same loop.
+          tools: lastRound ? undefined : toolSchemas(),
+          signal: options.signal,
+        })) {
+          if (event.type === "reasoning") yield { type: "reasoning", delta: event.delta };
+          else if (event.type === "text") {
+            text += event.delta;
+            yield { type: "text", delta: event.delta };
+          } else if (event.type === "tool_calls") calls = event.calls;
+        }
+      } catch (error) {
+        const message =
+          error instanceof GatewayError ? error.message : `unexpected: ${String(error)}`;
+        yield { type: "error", message };
+        return;
+      }
+
+      if (options.signal.aborted) {
+        // Keep the partial answer in history so a follow-up still makes sense.
+        this.messages.push({ role: "assistant", content: text });
+        return;
+      }
+
+      this.messages.push({
+        role: "assistant",
+        content: text,
+        ...(calls.length > 0 ? { tool_calls: calls } : {}),
+      });
+
+      if (calls.length === 0) return;
+
+      for (const call of calls) {
+        const name = call.function.name;
+        const spec = findTool(name);
+
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+        } catch {
+          // Fall through with empty args; the tool reports what it needed.
+        }
+
+        if (!spec) {
+          this.messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify({ error: `No tool named ${name}.` }),
+          });
+          continue;
+        }
+
+        if (spec.write) {
+          let edits: PendingEdit[];
+          try {
+            edits = await previewEdits(name, args);
+          } catch (error) {
+            const message = String(error instanceof Error ? error.message : error);
+            yield { type: "tool_start", id: call.id, name, label: spec.label(args), args };
+            yield { type: "tool_end", id: call.id, ok: false, summary: message, detail: "" };
+            this.messages.push({
+              role: "tool",
+              tool_call_id: call.id,
+              content: JSON.stringify({ applied: false, error: message }),
+            });
+            continue;
+          }
+
+          const decision = await options.requestApproval({ id: call.id, tool: name, edits });
+          const applied = decision === "apply";
+
+          let failure: string | null = null;
+          if (applied) {
+            try {
+              await applyEdits(edits);
+            } catch (error) {
+              failure = String(error instanceof Error ? error.message : error);
+            }
+          }
+
+          yield { type: "approval_end", id: call.id, applied: applied && !failure };
+          this.messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify(
+              failure
+                ? { applied: false, error: failure }
+                : applied
+                  ? { applied: true, cells: edits.map((edit) => edit.ref) }
+                  : { applied: false, reason: "The person declined this edit." },
+            ),
+          });
+          continue;
+        }
+
+        yield { type: "tool_start", id: call.id, name, label: spec.label(args), args };
+        try {
+          const result = await spec.run?.(args);
+          const detail = serializeResult(result);
+          yield {
+            type: "tool_end",
+            id: call.id,
+            ok: true,
+            summary: spec.summary?.(result) ?? "",
+            detail,
+          };
+          this.messages.push({ role: "tool", tool_call_id: call.id, content: detail });
+        } catch (error) {
+          const message = String(error instanceof Error ? error.message : error);
+          yield { type: "tool_end", id: call.id, ok: false, summary: message, detail: "" };
+          this.messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify({ error: message }),
+          });
+        }
+      }
+    }
+  }
 }

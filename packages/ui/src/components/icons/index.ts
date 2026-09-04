@@ -24,6 +24,7 @@ export {
   ArchiveRestoreIcon as ArchiveRestore,
   ArrowDown01Icon as ArrowDownIcon,
   ArrowLeft01Icon as ArrowLeft,
+  ArrowRight01Icon as ArrowRight,
   ArrowUp01Icon as ArrowUp,
   ArrowUpRight01Icon as ArrowUpRight,
   BellIcon as Bell,

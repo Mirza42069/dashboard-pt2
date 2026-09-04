@@ -6,328 +6,233 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Palette: the tweakcn theme at
+ * https://tweakcn.com/r/themes/cmmhf5f5t000604l10lbj1ml0, hand-merged.
+ *
+ * Hand-merged rather than installed. `bunx shadcn@latest add <that url>` does
+ * not apply here: there is no components.json in the repo, and packages/ui is a
+ * hand-maintained Svelte 5 library (bits-ui + tailwind-variants), not a
+ * shadcn-CLI-managed React project. The registry item is a block of CSS custom
+ * properties, which is exactly what follows.
+ *
+ * Every value the theme defines is taken from it verbatim. The tokens below
+ * that it does not define — --brand, --success, --warning, the --surface-*
+ * working greys, --progress-* — are this product's own, and are re-derived here
+ * so they sit inside the new palette instead of pointing at the one it replaced.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #22262a;
-  --card: #ffffff;
-  --card-foreground: #22262a;
-  --popover: #ffffff;
-  --popover-foreground: #22262a;
-  --primary: #e11421;
-  --primary-foreground: #ffffff;
-  --secondary: #f4f5f6;
-  --secondary-foreground: #2e3338;
-  --muted: #f7f7f8;
-  --muted-foreground: #5c6670;
-  --accent: #fdeced;
-  --accent-foreground: #8d0c15;
+  --background: oklch(0.9911 0 0);
+  --foreground: oklch(0.1763 0.0140 258.3572);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.1763 0.0140 258.3572);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.1763 0.0140 258.3572);
+  --primary: oklch(0.5882 0.2309 28.2936);
+  --primary-foreground: oklch(1.0000 0 0);
   /*
-   * A softer red than --primary on purpose. The two now sit in the same hue
-   * family, so an error state next to a primary button has to be told apart by
-   * something other than "is it red" — this one is lighter and less saturated,
-   * and it never appears as a large filled surface the way --primary does.
+   * Near-black navy with white text, not the light grey this token usually is.
+   * That is the theme's intent and it is load-bearing on this pane: user
+   * messages render as `Bubble variant="secondary"`, so the thread reads as
+   * solid navy chips from the user and plain text from the agent.
    */
-  --destructive: #ef4343;
+  --secondary: oklch(0.3303 0.0753 267.1046);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9674 0.0013 286.3752);
+  --muted-foreground: oklch(0.5517 0.0138 285.9385);
+  --accent: oklch(0.8342 0.0950 7.8239);
+  --accent-foreground: oklch(0.3155 0.1064 18.1157);
   /*
-   * The positive counterpart to --destructive. Added because two call sites had
-   * invented their own: a raw text-emerald-600 in baseline-tab, and
-   * deviation-badge borrowing --chart-3 to mean "ahead of schedule". The chart
-   * ramp encodes magnitude, not sentiment, so borrowing it said the wrong thing
-   * — and at L 0.55 it failed contrast on the dark card besides.
+   * A dark maroon, and deliberately far from --primary in lightness (0.40 vs
+   * 0.59) rather than in hue — the two are barely 1 degree apart on the hue
+   * wheel. An error icon beside a primary button is told apart by weight here,
+   * not by colour.
    */
-  --success: oklch(0.5000 0.1300 155);
-  --success-foreground: oklch(1 0 0);
-  /* Semantic caution state; chart tokens remain reserved for data magnitude. */
-  --warning: oklch(0.5600 0.1200 68);
-  --warning-foreground: oklch(1 0 0);
+  --destructive: oklch(0.3999 0.1641 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9197 0.0040 286.3202);
+  --input: oklch(0.9197 0.0040 286.3202);
+  --ring: oklch(0.5882 0.2309 28.2936);
+  --chart-1: oklch(0.5882 0.2309 28.2936);
+  --chart-2: oklch(0.3303 0.0753 267.1046);
+  --chart-3: oklch(0.8342 0.0950 7.8239);
+  --chart-4: oklch(0.8948 0.0509 64.2066);
+  --chart-5: oklch(0.7118 0.0129 286.0665);
+  --sidebar: oklch(1.0000 0 0);
+  --sidebar-foreground: oklch(0.3703 0.0119 285.8054);
+  --sidebar-primary: oklch(0.5882 0.2309 28.2936);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9674 0.0013 286.3752);
+  --sidebar-accent-foreground: oklch(0.1763 0.0140 258.3572);
+  --sidebar-border: oklch(0.9674 0.0013 286.3752);
+  --sidebar-ring: oklch(0.5882 0.2309 28.2936);
+
   /*
    * The product's red, and the same value as --primary.
    *
-   * They are kept as separate names rather than collapsed into one: --primary
-   * is what a shadcn component reaches for, --brand is what the product reaches
-   * for when it means "this is Tickmark" — the mark, the eyebrow, the agent
-   * rail, the ring on a flagged cell. Holding them apart is what lets a future
-   * theme move button colour without repainting the logo, which is exactly the
-   * move that happened here in reverse: --brand was amber while --primary was
-   * amber too, and unifying on red was a one-line change to this block rather
-   * than an edit to sixty call sites.
+   * Kept as a separate name rather than collapsed into one: --primary is what a
+   * shadcn component reaches for, --brand is what the product reaches for when
+   * it means "this is Tickmark" — the mark in the header, the agent avatar.
+   * Holding them apart is what lets a future theme move button colour without
+   * repainting the logo.
    */
-  --brand: #e11421;
-  --brand-foreground: #ffffff;
-  --brand-hover: #b3101a;
-
-  --border: #e3e6e8;
-  --input: #e3e6e8;
-  --ring: #e11421;
+  --brand: oklch(0.5882 0.2309 28.2936);
+  --brand-foreground: oklch(1.0000 0 0);
+  --brand-hover: oklch(0.5100 0.2100 28.2936);
   /*
-   * Sequential ramp, ordered by *prominence against this theme's page*: step 1
-   * has the most contrast, step 5 the least. Not by raw lightness — that is
-   * what broke before.
-   *
-   * The old order made --chart-1 the palest (L 0.81), and the S-curve
-   * reasonably asked for --chart-1 to draw its most important series: the
-   * actual-progress line came out at L 0.81 on an L 0.99 card and all but
-   * vanished. Indexing by prominence means "reach for chart-1 first" is now the
-   * right instinct.
-   *
-   * Teal through green to amber. This used to be a single blue hue drifting
-   * 252 → 266, which made every series and every accent in the product some
-   * shade of the same colour — the S-curve's two lines were two blues, and
-   * whatever reached for a step of this ramp as a decorative accent read as
-   * "the blue one" rather than as anything in particular. Spreading the hue
-   * gives the ramp's ends somewhere to be: --chart-1 and --chart-4 are now
-   * genuinely different colours, which is what a two-series chart needs.
-   *
-   * --chart-3 sits at hue 168 rather than the 155 it would take as the middle
-   * of an even sweep, deliberately: --success is at 155, and this ramp encodes
-   * magnitude, not sentiment. Holding it apart is what keeps a chart step from
-   * reading as "good" (see the note on --success above).
-   *
-   * .dark carries its own ramp under the same rule — see below.
+   * Sentiment colours the theme does not carry. Kept off the chart ramp on
+   * purpose — that ramp encodes magnitude, and borrowing a step of it to mean
+   * "good" says the wrong thing. Green at hue 155 and amber at 68 are far
+   * enough from this palette's red and navy that neither can be mistaken for
+   * brand or destructive.
    */
-  --chart-1: oklch(0.5000 0.2000 258);
-  --chart-2: oklch(0.5800 0.1250 220);
-  --chart-3: oklch(0.5500 0.1200 168);
-  --chart-4: oklch(0.6500 0.1400 75);
-  --chart-5: oklch(0.6400 0.0350 255);
-  /*
-   * The five-stop progress ramp, converted from the supplied sRGB palette.
-   * Bars sample between adjacent stops, while their written value remains the
-   * authoritative reading and schedule deviation stays a separate indicator.
-   */
-  --progress-1: oklch(0.6642333 0.2126592 25.08985);  /* #fb4b4b */
-  --progress-2: oklch(0.8072961 0.1202373 48.82692);  /* #ffa879 */
-  --progress-3: oklch(0.8494849 0.1315476 75.70558);  /* #ffc163 */
-  --progress-4: oklch(0.9706823 0.1787478 109.65321); /* #feff5c */
-  --progress-5: oklch(0.9242794 0.2229197 126.32289); /* #c0ff33 */
-  --radius: 0.5rem;
+  --success: oklch(0.5000 0.1300 155);
+  --success-foreground: oklch(1.0000 0 0);
+  --warning: oklch(0.5600 0.1200 68);
+  --warning-foreground: oklch(1.0000 0 0);
 
   /*
-   * Working surfaces — the greys the app's chrome is built from.
-   *
-   * These existed already, as literal hex scattered across four files:
-   * `bg-[#e9e9e4]` in app-shell and app-sidebar, `#f5f5f2` / `#fbfaf7` /
-   * `#f3f3ef` / `#fafaf8` in the workbook route. Same problem --text-caption
-   * was named to solve: a value repeated by hand is a value that drifts, and
-   * the workbook page had already drifted to a second green (#166534) that
-   * matched nothing else in the product.
-   *
-   * Neutral, not warm. These used to sit a hair to the yellow side of neutral
-   * (hue ~106) so that they would agree with an amber --brand instead of
-   * fighting it. --brand is red now, and a yellow-tinted grey under a red
-   * accent reads as a stain rather than as paper — the warmth was in service of
-   * the amber, so it goes with the amber. They are re-derived off the same grey
-   * ladder as --secondary / --muted / --border, which keeps the app's chrome
-   * and its components in one family.
-   *
-   * Ordered darkest to lightest: shell is the gutter behind everything, canvas
-   * the page under a workspace, panel the agent rail, grid-header the frozen
-   * header and row gutter, grid-alt the zebra stripe.
+   * Working surfaces — the greys app chrome is built from, re-derived off this
+   * theme's neutrals. Ordered darkest to lightest: shell is the gutter behind
+   * everything, canvas the page under a workspace, panel the agent rail,
+   * grid-header a frozen header, grid-alt a zebra stripe.
    */
-  --surface-shell: #eceef0;
-  --surface-canvas: #f4f5f6;
-  --surface-panel: #fafafb;
-  --surface-grid-header: #f2f3f4;
-  --surface-grid-alt: #fafafa;
-  /* Near-black chip behind the agent mark. Tracks --foreground. */
-  --ink-strong: #22262a;
-
-  /*
-   * Grid density.
-   *
-   * A finance grid is read in rows, not in cards, so its rhythm is worth
-   * naming once rather than restating as `h-8` at every call site. rem, not
-   * px, so the accessibility text scale (html.a11y-large-text, below) grows
-   * the rows with the type instead of trapping 125% text in a 32px box.
-   *
-   * --row-h is the editable grid; --row-h-compact is a dense read-only list.
-   */
-  --row-h: 2rem;
-  --row-h-compact: 1.75rem;
-  --grid-cell-px: 0.5rem;
-  --sidebar: #f9fafa;
-  --sidebar-foreground: #2e3338;
-  --sidebar-primary: #e11421;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fde3e5;
-  --sidebar-accent-foreground: #8d0c15;
-  --sidebar-border: #e9ebed;
-  --sidebar-ring: #e11421;
-  --destructive-foreground: #ffffff;
-  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-opacity: 0.05;
-  --shadow-blur: 4px;
-  --shadow-spread: 0px;
-  --shadow-offset-x: 0px;
-  --shadow-offset-y: 1px;
-  --letter-spacing: -0.01em;
-  --spacing: 0.25rem;
-  /*
-   * Elevation ramp, retuned to the flatter theme this palette belongs to.
-   *
-   * Much lighter than the ramp it replaces: a 4px ambient blur at 3–5% opacity
-   * throughout, with only the second, directional shadow growing as an object
-   * lifts. That is the whole difference between the steps here — the depth cue
-   * is offset, not darkness — which is what keeps a card on a white page from
-   * looking like it is floating a foot above it.
-   *
-   * The one departure from the supplied theme is --shadow-2xl. As given it was
-   * a single `0 1px 4px` at 13%, i.e. *smaller* than --shadow-xl's 8px offset,
-   * so anything reaching for the top of the scale got less depth than the step
-   * below it. Exactly the inversion this ramp was rewritten once before to fix.
-   * It keeps the supplied 13% opacity and takes the largest geometry, so the
-   * eight names stay monotonic.
-   */
-  --shadow-2xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
-  --shadow-xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
-  --shadow-sm: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow-md: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.05);
-  --shadow-lg: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 4px 6px -1px hsl(0 0% 0% / 0.05);
-  --shadow-xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.05);
-  --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13), 0px 16px 24px -4px hsl(0 0% 0% / 0.13);
-  --tracking-normal: -0.01em;
-}
-
-.dark {
-  --background: #090a0b;
-  --foreground: #fafafa;
-  --card: #101214;
-  --card-foreground: #fafafa;
-  --popover: #101214;
-  --popover-foreground: #fafafa;
-  --primary: #e11421;
-  --primary-foreground: #ffffff;
-  --secondary: #22262a;
-  --secondary-foreground: #fafafa;
-  --muted: #1c1f22;
-  --muted-foreground: #9da6af;
-  --accent: #46060a;
-  --accent-foreground: #f7a1a7;
-  --destructive: #7c1d1d;
-  --success: oklch(0.7600 0.1500 155);
-  --success-foreground: oklch(0.2494 0.0304 256.8623);
-  --warning: oklch(0.7800 0.1400 75);
-  --warning-foreground: oklch(0.2478 0 0);
-  /*
-   * The same red as :root, unlike every previous version of this block.
-   *
-   * It used to be lifted and desaturated for legibility, because the light
-   * brand was a petrol teal at L 0.45 that all but vanished on a dark card.
-   * A red at L ~0.55 does not have that problem: it clears 4.5:1 against this
-   * page as a graphic and reads clearly as the mark at icon size, so the mark
-   * is now byte-identical across both themes rather than merely "the same hue".
-   *
-   * White foreground, not near-black — the reverse of what the teal wanted.
-   * Red is dark enough at full chroma that white is the legible pairing on it
-   * in either theme, which is also why --primary-foreground is white above.
-   */
-  --brand: #e11421;
-  --brand-foreground: #ffffff;
-  --brand-hover: #f0343f;
-
-  --border: #25292d;
-  --input: #25292d;
-  --ring: #e11421;
-  /*
-   * The dark ramp, under the same prominence rule as :root — step 1 has the
-   * most contrast against this theme's page, step 5 the least.
-   *
-   * It needs its own values rather than inheriting: the page here is L 0.229
-   * and the card L 0.261, so the light ramp's dark end (L 0.42) lands almost on
-   * top of the surface it is drawn on. Previously these five were byte-identical
-   * to :root, which meant whichever series used the dark end was unreadable in
-   * dark mode no matter how the light end was fixed.
-   *
-   * Chroma is scaled down as lightness climbs so every step stays inside sRGB.
-   *
-   * Kept in step with the :root ramp's move off blue, even though nothing
-   * renders from this block today — getTheme() in apps/web/src/lib/theme.ts
-   * forces dark to light, so .dark is unreachable. Leaving five blues here
-   * while the light ramp is teal-to-amber would make the one-line revert that
-   * file describes land the product in a different palette than it left.
-   */
-  --chart-1: oklch(0.8600 0.0600 190);
-  --chart-2: oklch(0.7800 0.0900 185);
-  --chart-3: oklch(0.7200 0.1300 165);
-  --chart-4: oklch(0.7600 0.1400 75);
-  --chart-5: oklch(0.5200 0.1000 195);
-  /* Keep the requested progress palette exact if dark mode is re-enabled. */
+  --surface-shell: oklch(0.9400 0.0020 286.3752);
+  --surface-canvas: oklch(0.9674 0.0013 286.3752);
+  --surface-panel: oklch(1.0000 0 0);
+  --surface-grid-header: oklch(0.9600 0.0013 286.3752);
+  --surface-grid-alt: oklch(0.9800 0.0010 286.3752);
+  --ink-strong: oklch(0.1763 0.0140 258.3572);
+  /* Five-stop progress ramp, independent of the theme by design. */
   --progress-1: oklch(0.6642333 0.2126592 25.08985);
   --progress-2: oklch(0.8072961 0.1202373 48.82692);
   --progress-3: oklch(0.8494849 0.1315476 75.70558);
   --progress-4: oklch(0.9706823 0.1787478 109.65321);
   --progress-5: oklch(0.9242794 0.2229197 126.32289);
+
   /*
-   * Dark counterparts to the working surfaces in :root.
-   *
-   * Unreachable today (theme.ts exposes only "light"), and carried for the same
-   * reason the dark chart ramp is: the one-line revert that re-enables dark mode
-   * must not land the product on a page where every grid header is transparent.
-   *
-   * Derived off this block's own near-black ladder, and only the ordering is
-   * carried over from :root: shell darkest, then canvas, panel, grid-alt, with
-   * grid-header the lightest step so a frozen header still separates from the
-   * rows under it.
+   * Grid density, in rem so the accessibility text scale grows rows with the
+   * type instead of trapping 125% text in a 32px box.
    */
-  --surface-shell: #060708;
-  --surface-canvas: #090a0b;
-  --surface-panel: #101214;
-  --surface-grid-header: #1c1f22;
-  --surface-grid-alt: #121416;
-  --ink-strong: #fafafa;
-  --sidebar: #121416;
-  --sidebar-foreground: #e3e6e8;
-  --sidebar-primary: #e11421;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #46060a;
-  --sidebar-accent-foreground: #f9b9bd;
-  --sidebar-border: #202427;
-  --sidebar-ring: #e11421;
-  --destructive-foreground: #fafafa;
-  /*
-   * --radius and --font-sans are deliberately NOT redeclared here.
-   *
-   * This block used to override them to 0.375rem and a bare system stack, so
-   * corner radius changed and Inter was dropped the moment dark mode was
-   * enabled — a theme is a palette, not a different product. Both now come from
-   * :root for both themes.
-   */
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-opacity: 0.4;
-  --shadow-blur: 8px;
-  --shadow-spread: 0px;
-  --shadow-offset-x: 0px;
-  --shadow-offset-y: 2px;
-  --letter-spacing: -0.01em;
+  --row-h: 2rem;
+  --row-h-compact: 1.75rem;
+  --grid-cell-px: 0.5rem;
+
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: Georgia, ui-serif, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --radius: 0.75rem;
   --spacing: 0.25rem;
+  --tracking-normal: -0.02em;
+  --letter-spacing: -0.02em;
+
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 10px;
+  --shadow-spread: -2px;
+  --shadow-opacity: 0.1;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 2px 4px -3px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -3px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.10);
   /*
-   * Same ramp shape as :root — a fixed ambient blur plus a directional shadow
-   * that grows with elevation — at roughly eight times the opacity and twice
-   * the blur. A black shadow on a dark surface has far less to work with than
-   * the same shadow on white, so matching the light values reads as no
-   * elevation at all.
-   *
-   * --shadow-2xl takes the same correction as :root: as supplied it was a lone
-   * `0 2px 8px` at full opacity, i.e. a smaller geometry than --shadow-xl.
+   * The one departure from the theme as supplied, and the same correction this
+   * ramp has needed before: --shadow-2xl arrived as a lone `0 4px 10px` at 25%,
+   * i.e. the same geometry as --shadow-xs. Anything reaching for the top of the
+   * scale got less depth than the step below it. It keeps the supplied 25%
+   * opacity and takes the largest geometry, so the eight names stay monotonic.
    */
-  --shadow-2xs: 0px 2px 8px 0px hsl(0 0% 0% / 0.20);
-  --shadow-xs: 0px 2px 8px 0px hsl(0 0% 0% / 0.20);
-  --shadow-sm: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 1px 2px -1px hsl(0 0% 0% / 0.40);
-  --shadow: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 1px 2px -1px hsl(0 0% 0% / 0.40);
-  --shadow-md: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 2px 4px -1px hsl(0 0% 0% / 0.40);
-  --shadow-lg: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 4px 6px -1px hsl(0 0% 0% / 0.40);
-  --shadow-xl: 0px 2px 8px 0px hsl(0 0% 0% / 0.40), 0px 8px 10px -1px hsl(0 0% 0% / 0.40);
-  --shadow-2xl: 0px 2px 8px 0px hsl(0 0% 0% / 0.60), 0px 16px 24px -4px hsl(0 0% 0% / 0.60);
+  --shadow-2xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.25), 0px 16px 24px -4px hsl(0 0% 0% / 0.25);
 }
 
+.dark {
+  --background: oklch(0.1645 0.0086 274.3354);
+  --foreground: oklch(0.9911 0 0);
+  --card: oklch(0.2145 0.0184 270.4182);
+  --card-foreground: oklch(0.9911 0 0);
+  --popover: oklch(0.2145 0.0184 270.4182);
+  --popover-foreground: oklch(0.9911 0 0);
+  --primary: oklch(0.6453 0.2404 27.3106);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.2604 0.0471 267.4902);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.2739 0.0055 286.0326);
+  --muted-foreground: oklch(0.7118 0.0129 286.0665);
+  --accent: oklch(0.6986 0.1954 14.1660);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.3958 0.1331 25.7230);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.2739 0.0055 286.0326);
+  --input: oklch(0.2739 0.0055 286.0326);
+  --ring: oklch(0.6453 0.2404 27.3106);
+  --chart-1: oklch(0.6453 0.2404 27.3106);
+  --chart-2: oklch(0.3986 0.0946 266.8132);
+  --chart-3: oklch(0.7570 0.1485 11.9623);
+  --chart-4: oklch(0.7824 0.0829 60.0948);
+  --chart-5: oklch(0.4419 0.0146 285.7864);
+  --sidebar: oklch(0.1645 0.0086 274.3354);
+  --sidebar-foreground: oklch(0.7118 0.0129 286.0665);
+  --sidebar-primary: oklch(0.6453 0.2404 27.3106);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.2145 0.0184 270.4182);
+  --sidebar-accent-foreground: oklch(0.9911 0 0);
+  --sidebar-border: oklch(0.2739 0.0055 286.0326);
+  --sidebar-ring: oklch(0.6453 0.2404 27.3106);
+
+  --brand: oklch(0.6453 0.2404 27.3106);
+  --brand-foreground: oklch(1.0000 0 0);
+  --brand-hover: oklch(0.7100 0.2100 27.3106);
+  /* Lifted for legibility on a near-black page; foregrounds flip to near-black. */
+  --success: oklch(0.7600 0.1500 155);
+  --success-foreground: oklch(0.2145 0.0184 270.4182);
+  --warning: oklch(0.7800 0.1400 75);
+  --warning-foreground: oklch(0.2145 0.0184 270.4182);
+
+  --surface-shell: oklch(0.1200 0.0080 274.3354);
+  --surface-canvas: oklch(0.1645 0.0086 274.3354);
+  --surface-panel: oklch(0.2145 0.0184 270.4182);
+  --surface-grid-header: oklch(0.2739 0.0055 286.0326);
+  --surface-grid-alt: oklch(0.1900 0.0120 272.0000);
+  --ink-strong: oklch(0.9911 0 0);
+  --progress-1: oklch(0.6642333 0.2126592 25.08985);
+  --progress-2: oklch(0.8072961 0.1202373 48.82692);
+  --progress-3: oklch(0.8494849 0.1315476 75.70558);
+  --progress-4: oklch(0.9706823 0.1787478 109.65321);
+  --progress-5: oklch(0.9242794 0.2229197 126.32289);
+
+  /*
+   * --radius, the --font-* stacks and the density tokens are deliberately NOT
+   * redeclared. A theme is a palette, not a different product; both modes take
+   * them from :root.
+   */
+  --shadow-x: 0px;
+  --shadow-y: 8px;
+  --shadow-blur: 15px;
+  --shadow-spread: -3px;
+  --shadow-opacity: 0.4;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 8px;
+  --shadow-2xs: 0px 8px 15px -3px hsl(0 0% 0% / 0.20);
+  --shadow-xs: 0px 8px 15px -3px hsl(0 0% 0% / 0.20);
+  --shadow-sm: 0px 8px 15px -3px hsl(0 0% 0% / 0.40), 0px 1px 2px -4px hsl(0 0% 0% / 0.40);
+  --shadow: 0px 8px 15px -3px hsl(0 0% 0% / 0.40), 0px 1px 2px -4px hsl(0 0% 0% / 0.40);
+  --shadow-md: 0px 8px 15px -3px hsl(0 0% 0% / 0.40), 0px 2px 4px -4px hsl(0 0% 0% / 0.40);
+  --shadow-lg: 0px 8px 15px -3px hsl(0 0% 0% / 0.40), 0px 4px 6px -4px hsl(0 0% 0% / 0.40);
+  --shadow-xl: 0px 8px 15px -3px hsl(0 0% 0% / 0.40), 0px 8px 10px -4px hsl(0 0% 0% / 0.40);
+  /* Same monotonicity correction as :root, at this block's opacity. */
+  --shadow-2xl: 0px 8px 15px -3px hsl(0 0% 0% / 1.00), 0px 16px 24px -4px hsl(0 0% 0% / 1.00);
+}
+
+
 @theme inline {
-  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans);
   /*
    * The caption/eyebrow step, named.
    *
@@ -377,9 +282,9 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --radius: 0.5rem;
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --radius: var(--radius);
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);
