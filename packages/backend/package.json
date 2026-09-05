@@ -1,0 +1,27 @@
+{
+  "name": "@my-better-t-app/backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "check-types": "tsc -p convex/tsconfig.json",
+    "test": "bun test tests",
+    "dev": "convex dev",
+    "dev:setup": "convex dev --configure --until-success"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
+    "@effect/platform": "^0.97.1",
+    "better-auth": "~1.6.15",
+    "convex": "catalog:",
+    "dotenv": "catalog:",
+    "effect": "^3.22.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@my-better-t-app/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
